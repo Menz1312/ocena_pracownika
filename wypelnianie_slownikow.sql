@@ -20,9 +20,6 @@ INSERT INTO typy_stanowisk (nazwa_typu, prog_punktowy_total, prog_punktowy_pub, 
 -- Na podstawie Załącznika nr 1 "Arkusz oceny..." [cite: 178-223]
 -- ID Grup: 1='PUB', 2='BR', 3='DYD', 4='ORG'
 
--- Najpierw czyścimy tabelę, aby uniknąć duplikatów przy ponownym uruchamianiu
-TRUNCATE TABLE sl_typy_aktywnosci RESTART IDENTITY CASCADE;
-
 -- WYPEŁNIENIE SŁOWNIKA TYPÓW AKTYWNOŚCI
 -- Kolumny: id_grupy, lp, nazwa_parametru, punkty_domyslne, punkty_min, punkty_max, czy_ciagla
 
