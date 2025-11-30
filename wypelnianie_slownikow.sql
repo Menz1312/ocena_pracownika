@@ -20,80 +20,195 @@ INSERT INTO typy_stanowisk (nazwa_typu, prog_punktowy_total, prog_punktowy_pub, 
 -- Na podstawie Załącznika nr 1 "Arkusz oceny..." [cite: 178-223]
 -- ID Grup: 1='PUB', 2='BR', 3='DYD', 4='ORG'
 
-INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, punkty_min, punkty_max) VALUES
--- Grupa 1: Działalność publikacyjna (Lp. 1-5) [cite: 181, 184]
-(1, '1.', 'Publikacja w czasopiśmie naukowym wymienionym w wykazie właściwego ministra', NULL, NULL, NULL),
-(1, '2.', 'Publikacja w recenzowanych materiałach z konferencji międzynarodowej wymienionej w wykazie właściwego ministra', NULL, NULL, NULL),
-(1, '3.', 'Monografia naukowa wydana przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL),
-(1, '4.', 'Rozdział w monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL),
-(1, '5.', 'Redakcja monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL),
+-- Najpierw czyścimy tabelę, aby uniknąć duplikatów przy ponownym uruchamianiu
+TRUNCATE TABLE sl_typy_aktywnosci RESTART IDENTITY CASCADE;
 
--- Grupa 2: Działalność B+R (Lp. 6-15) [cite: 189-203]
-(2, '6.', 'Przyznany PCz patent europejski albo patent przyznany za granicą co najmniej w jednym z państw należących do Organizacji Współpracy Gospodarczej i Rozwoju, pod warunkiem, że wynalazek został zgłoszony również w Urzędzie Patentowym Rzeczypospolitej Polskiej', NULL, NULL, NULL),
-(2, '7.', 'Patent przyznany PCz przez Urząd Patentowy Rzeczypospolitej Polskiej', NULL, NULL, NULL),
-(2, '8.', 'Patent przyznany innemu podmiotowi niż PCz, jeżeli autorem albo współautorem wynalazku, na który patent został przyznany jest pracownik PCz', NULL, NULL, NULL),
-(2, '9.', 'Prawa ochronne na wzór użytkowy przyznane PCz przez Urząd Patentowy Rzeczypospolitej Polskiej albo za granicą', NULL, NULL, NULL),
-(2, '10.', 'Uzyskane projekty obejmujące badania naukowe lub prace rozwojowe, finansowane w trybie konkursowym przez instytucje zagraniczne lub organizacje międzynarodowe lub ze środków finansowych na szkolnictwo wyższe i naukę przeznaczanych na: | a) zadania finansowane z udziałem środków pochodzących z budżetu Unii Europejskiej albo z niepodlegających zwrotowi środków z pomocy udzielanej przez państwa członkowskie Europejskiego Porozumienia o Wolnym Handlu (EFTA), albo z innych środków pochodzących ze źródeł zagranicznych niepodlegających zwrotowi; | b) zadania finansowane przez NCBIR, w tym badania naukowe i prace rozwojowe na rzecz obronności i bezpieczeństwa państwa; | c) zadania finansowane przez NCN; | d) zadania finansowane przez Fundację na Rzecz Nauki Polskiej; | e) zadania finansowane przez Narodową Agencję Wymiany Akademickiej. | (Sumy środków finansowych przyznanych... samodzielnie przez PCz lub PCz jest liderem)', NULL, NULL, NULL),
-(2, '11.', 'Uzyskane projekty obejmujące badania naukowe lub prace rozwojowe, finansowane w trybie konkursowym przez instytucje zagraniczne lub organizacje międzynarodowe lub ze środków finansowych na szkolnictwo wyższe i naukę przeznaczanych na: | a) zadania finansowane z udziałem środków pochodzących z budżetu Unii Europejskiej... [itd.] | b) zadania finansowane przez NCBIR... [itd.] | c) zadania finansowane przez NCN, | d) zadania finansowane przez Fundację na Rzecz Nauki Polskiej, | e) zadania finansowane przez Narodową Agencję Wymiany Akademickiej. | (Sumy środków finansowych... w przypadku projektów realizowanych przez grupę podmiotów, do której należy PCz, której liderem jest ... podmiot nienależący do systemu...)', NULL, NULL, NULL),
-(2, '12.', 'Komercjalizacja wyników badań naukowych lub prac rozwojowych lub know-how związanego z tymi wynikami albo usług badawczych świadczonych na zlecenie podmiotów nienależących do systemu szkolnictwa wyższego i nauki.', NULL, NULL, NULL),
-(2, '13.', 'Realizacja projektów oraz badań zleconych i usługowych w okresie oceny', NULL, NULL, NULL),
-(2, '14.', 'Uzyskane i potwierdzone przez podmioty przychody ze sprzedaży produktów będących efektem wdrożenia wyników badań naukowych lub prac rozwojowych, zrealizowanych w PCz: | 1) łączne przychody o wartości powyżej 5 mln zł - 60 pkt; | 2) łączne przychody o wartości powyżej 2,5 mln zł do 5 mln zł - 40 pkt; | 3) łączne przychody o wartości powyżej 0,5 mln zł do 2,5 mln zł - 20 pkt | 4) łączne przychody o wartości od 25 tys.zł do 0,5 mln zł - 5 pkt.', NULL, 5, 60),
-(2, '15.', 'Udział w zespołach badawczych/udział w zespołach badawczych interdyscyplinarnych (za każdy udział)', NULL, 2, 4),
+-- WYPEŁNIENIE SŁOWNIKA TYPÓW AKTYWNOŚCI
+-- Kolumny: id_grupy, lp, nazwa_parametru, punkty_domyslne, punkty_min, punkty_max, czy_ciagla
 
--- Grupa 3: Działalność dydaktyczna (Lp. 16-37) [cite: 205-213]
-(3, '16.', 'Autorstwo podręcznika akademickiego/skryptu', 40, 40, 40),
-(3, '17.', 'Autorstwo rozdziału w podręczniku akademickim/ w skrypcie', 10, 10, 10),
-(3, '18.', 'Redakcja wieloautorskiego podręcznika akademickiego/skryptu', 10, 10, 10),
-(3, '19.', 'Ocena na podstawie ankiet studentów i doktorantów (w ocenianym roku kalendarzowym)', NULL, 0, 10),
-(3, '20.', 'Ocena z hospitacji zajęć dydaktycznych (w ocenianym roku kalendarzowym)', NULL, 0, 10),
-(3, '21.', 'Liczba godzin w pensum dydaktycznym (nie mniej niż 10 dla pracownika prowadzącego zajęcia dydaktyczne)', NULL, 10, NULL),
-(3, '22.', 'Funkcja promotora rozprawy doktorskiej, za każde promotorstwo rocznie. Nie dłużej niż 4 lata od momentu wszczęcia przewodu doktorskiego lub rozpoczęcia kształcenia w szkole doktorskiej', 12, 12, 12),
-(3, '23.', 'Funkcja promotora rozprawy doktorskiej w postępowaniu zakończonym nadaniem stopnia. Jednorazowo, w roku nadania stopnia naukowego doktora', 12, 12, 12),
-(3, '24.', 'Funkcja promotora pomocniczego rozprawy doktorskiej rocznie. Nie dłużej niż 4 lata od momentu wszczęcia przewodu doktorskiego lub rozpoczęcia kształcenia w szkole doktorskiej', 8, 8, 8),
-(3, '25.', 'Funkcja promotora pomocniczego rozprawy doktorskiej w postępowaniu zakończonym nadaniem stopnia. Jednorazowo, w roku nadania stopnia naukowego doktora', 8, 8, 8),
-(3, '26.', 'Udział w komisji egzaminacyjnej w przewodzie doktorskim w charakterze egzaminatora lub specjalisty w zakresie języka obcego...', 5, 5, 5),
-(3, '27.', 'Funkcja promotora pracy inżynierskiej, licencjackiej/ magisterskiej. Maksymalnie 24 pkt rocznie', NULL, 4, 6),
-(3, '28.', 'Opracowanie recenzji pracy dyplomowej (licencjackiej, inżynierskiej/magisterskiej). Maksymalnie 12 pkt rocznie', NULL, 2, 3),
-(3, '29.', 'Koordynator uczelniany/koordynator wydziałowy lub koordynator zadania/członek zespołu w projekcie dydaktycznym lub inwestycyjnym finansowanym ze środków zewnętrznych', NULL, 1, 3),
-(3, '30.', 'Autorstwo programu nowego przedmiotu, na studiach pierwszego, drugiego stopnia oraz w szkole doktorskiej. Wprowadzone do oferty kształcenia', 5, 5, 5),
-(3, '31.', 'Przygotowanie i uruchomienie nowego laboratorium lub jego istotna, udokumentowana modyfikacja. Wprowadzone do oferty kształcenia', 10, 10, 10),
-(3, '32.', 'Opracowanie nowego kierunku studiów, nowego zakresu wraz z programem kształcenia lub ich istotna modyfikacja', NULL, NULL, 25),
-(3, '33.', 'Opieka nad działającym kołem naukowym', 3, 3, 3),
-(3, '34.', 'Podniesienie kwalifikacji zawodowych (potwierdzone każdorazowo certyfikatem): doskonalenie warsztatu poprzez udział w szkoleniach, kursach, konferencjach', 5, 5, 5),
-(3, '35.', 'Prowadzenie kursów i szkoleń prowadzących do podniesienia kwalifikacji zawodowych (potwierdzone każdorazowo certyfikatem)...', 10, 10, 10),
-(3, '36.', 'Opieka nad laboratorium', NULL, NULL, 10),
-(3, '37.', 'Udział w międzynarodowych programach wymiany akademickiej', 2, 2, 2),
+INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, punkty_min, punkty_max, czy_ciagla) VALUES
 
--- Grupa 4: Działalność organizacyjna (Lp. 38-66) [cite: 213-223]
-(4, '38.', 'Pełnienie funkcji prorektora/dziekana/kierownika szkoły doktorskiej, prodziekana ds. nauki, prodziekana ds. dydaktycznych, prodziekana ds. rozwoju, kierownika jednostki międzywydziałowej/zastępcy: prodziekana ds. dydaktycznych, kierownika jednostki międzywydziałowej, kierownika katedry/zastępcy kierownika katedry', NULL, 10, 35),
-(4, '39.', 'Pełnienie funkcji pełnomocnika lub koordynatora rektora/dziekana', NULL, 6, 12),
-(4, '40.', 'Pełnienie funkcji kierownika studiów doktoranckich/kierownika biura studentów zagranicznych', 8, 8, 8),
-(4, '41.', 'Udział z wyboru we władzach centralnych towarzystw naukowych/związków i organizacji branżowych krajowych/regionalnych', NULL, 4, 8),
-(4, '42.', 'Organizacja międzynarodowej konferencji naukowej/dydaktycznej (ang. organizing committee): | 1) przewodniczący komitetu organizacyjnego; | 2) sekretarz lub zastępca przewodniczącego komitetu organizacyjnego; | 3) pozostali członkowie komitetu organizacyjnego.', NULL, NULL, 20),
-(4, '43.', 'Organizacja krajowej konferencji naukowej/dydaktycznej: | 1) przewodniczący komitetu organizacyjnego lub jego odpowiednik; | 2) sekretarz lub zastępca przewodniczącego komitetu organizacyjnego; | 3) pozostali członkowie komitetu organizacyjnego.', NULL, 3, 15),
-(4, '44.', 'Organizacja konferencji studenckiej: | 1) przewodniczący komitetu organizacyjnego lub jego odpowiednik; | 2) sekretarz komitetu organizacyjnego | 3) pozostali członkowie komitetu organizacyjnego', NULL, 2, 8),
-(4, '45.', 'Organizacja i przeprowadzenie (poza pensum dydaktycznym) kursów studenckich, olimpiad przedmiotowych/konkursów zewnętrznych/zajęć dla szkół średnich, uczelnianych rozgrywek sportowych, uczelnianych konkursów tematycznych, wycieczek dydaktycznych', NULL, 2, 8),
-(4, '46.', 'Nagroda prezydenta, premiera/ministra/marszałka województwa, wojewody, prezydenta miasta', NULL, 5, 20),
-(4, '47.', 'Promotorstwo wyróżnionych lub nagrodzonych prac dyplomowych i projektowych (poziom międzynarodowy/poziom krajowy/poziom regionalny/poziom uczelniany)', NULL, 3, 15),
-(4, '48.', 'Uzyskanie nagrody innej niż wymieniona powyżej, na poziomie międzynarodowym/krajowym/regionalnym', NULL, 3, 10),
-(4, '49.', 'Nagrody przyznawane przez zagraniczne instytucje edukacyjne/nagrody przyznawane przez krajowe instytucje edukacyjne', NULL, 3, 5),
-(4, '50.', 'Członkostwo w zespołach i komisjach powołanych zarządzeniem rektora, nie wymienionych w pozostałych pozycjach arkusza oraz komisjach senackich (bez funkcji kierowniczych/bez przewodniczących)', 3, 3, 3),
-(4, '51.', 'Przewodniczenie w zespołach i komisjach powołanych zarządzeniem rektora, niewymienionych wcześniej oraz komisjach senackich', 4, 4, 4),
-(4, '52.', 'Członkostwo w Uczelnianej/Wydziałowej Komisji ds. Jakości Kształcenia (bez przewodniczącego)', NULL, 5, 10),
-(4, '53.', 'Przewodniczenie w Uczelnianej/Wydziałowej Komisji ds. Jakości Kształcenia', NULL, 10, 15),
-(4, '54.', 'Członkostwo w komisji rekrutacyjnej: doktoranckiej/wydziałowej', NULL, 3, 6),
-(4, '55.', 'Opiekun roku studenckiego/opiekun praktyk studenckich jednego roku', NULL, 5, 10),
-(4, '56.', 'Członkostwo w komisjach i zespołach zadaniowych powołanych decyzją osoby pełniącej funkcję kierowniczą', 4, 4, 4),
-(4, '57.', 'Członkostwo we władzach zagranicznych lub międzynarodowych/krajowych towarzystw, organizacji i instytucji naukowych', NULL, 2, 4),
-(4, '58.', 'Członkostwo w PAN/członkostwo w komitecie/członek stowarzyszony z sekcją PAN, ekspert/ członkostwo w komisji', NULL, 2, 25),
-(4, '59.', 'Działalność w zespołach i panelach instytucji centralnych, np. w Polskiej Komisji Akredytacyjnej, Radzie Nauki, Radzie Głównej Nauki i Szkolnictwa Wyższego/instytucjach regionalnych', NULL, 5, 20),
-(4, '60.', 'Aktywny udział w międzynarodowych/krajowych targach i spotkaniach edukacyjnych (w imieniu PCz)', NULL, 1, 3),
-(4, '61.', 'Redaktor czasopisma naukowego/numeru czasopisma naukowego', NULL, 5, 10),
-(4, '62.', 'Wystąpienia i publikacje w mediach (telewizja, prasa, radio, Internet) w roli eksperta Uczelni lub gościa - uczestnika programu lub debaty', 3, 3, 3),
-(4, '63.', 'Wykonanie tłumaczeń i korekt językowych dokumentów i umów związanych z działalnością uczelni (dotyczy SJO)', 2, 2, 2),
-(4, '64.', 'Organizacja Dni Sportu i innych imprez sportowych i kulturalnych', 10, 10, 10),
-(4, '65.', 'Inne szczególne działania służące promocji i budowaniu pozytywnego wizerunku Uczelni/Wydziału', NULL, NULL, 10),
-(4, '66.', 'Inne prace organizacyjne nieuwzględnione powyżej', NULL, NULL, 6);
+-- === Grupa 1: Działalność publikacyjna (Lp. 1-5) ===
+(1, '1.', 'Publikacja w czasopiśmie naukowym wymienionym w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+(1, '2.', 'Publikacja w recenzowanych materiałach z konferencji międzynarodowej wymienionej w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+(1, '3.', 'Monografia naukowa wydana przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+(1, '4.', 'Rozdział w monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+(1, '5.', 'Redakcja monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+
+-- === Grupa 2: Działalność B+R (Lp. 6-15) ===
+(2, '6.', 'Przyznany PCz patent europejski albo patent przyznany za granicą...', NULL, NULL, NULL, FALSE),
+(2, '7.', 'Patent przyznany PCz przez Urząd Patentowy Rzeczypospolitej Polskiej', NULL, NULL, NULL, FALSE),
+(2, '8.', 'Patent przyznany innemu podmiotowi niż PCz (autor pracownik PCz)', NULL, NULL, NULL, FALSE),
+(2, '9.', 'Prawa ochronne na wzór użytkowy przyznane PCz...', NULL, NULL, NULL, FALSE),
+
+-- Rozbicie punktu 10 (Projekty B+R - PCz liderem/samodzielnie)
+(2, '10a.', 'Projekt B+R (PCz lider): Finansowany z budżetu UE, EFTA lub zagraniczne bezzwrotne', NULL, NULL, NULL, TRUE),
+(2, '10b.', 'Projekt B+R (PCz lider): Finansowany przez NCBIR (obronność/bezpieczeństwo)', NULL, NULL, NULL, TRUE),
+(2, '10c.', 'Projekt B+R (PCz lider): Finansowany przez NCN', NULL, NULL, NULL, TRUE),
+(2, '10d.', 'Projekt B+R (PCz lider): Finansowany przez FNP', NULL, NULL, NULL, TRUE),
+(2, '10e.', 'Projekt B+R (PCz lider): Finansowany przez NAWA', NULL, NULL, NULL, TRUE),
+
+-- Rozbicie punktu 11 (Projekty B+R - PCz partnerem)
+(2, '11a.', 'Projekt B+R (PCz partner): Finansowany z budżetu UE, EFTA lub zagraniczne bezzwrotne', NULL, NULL, NULL, TRUE),
+(2, '11b.', 'Projekt B+R (PCz partner): Finansowany przez NCBIR (obronność/bezpieczeństwo)', NULL, NULL, NULL, TRUE),
+(2, '11c.', 'Projekt B+R (PCz partner): Finansowany przez NCN', NULL, NULL, NULL, TRUE),
+(2, '11d.', 'Projekt B+R (PCz partner): Finansowany przez FNP', NULL, NULL, NULL, TRUE),
+(2, '11e.', 'Projekt B+R (PCz partner): Finansowany przez NAWA', NULL, NULL, NULL, TRUE),
+
+(2, '12.', 'Komercjalizacja wyników badań / usługi badawcze (dla podmiotów spoza szkolnictwa)', NULL, NULL, NULL, FALSE),
+(2, '13.', 'Realizacja projektów oraz badań zleconych i usługowych', NULL, NULL, NULL, TRUE),
+
+-- Rozbicie punktu 14 (Przychody z wdrożeń)
+(2, '14a.', 'Przychody z wdrożeń: powyżej 5 mln zł', 60, 60, 60, FALSE),
+(2, '14b.', 'Przychody z wdrożeń: powyżej 2,5 mln zł do 5 mln zł', 40, 40, 40, FALSE),
+(2, '14c.', 'Przychody z wdrożeń: powyżej 0,5 mln zł do 2,5 mln zł', 20, 20, 20, FALSE),
+(2, '14d.', 'Przychody z wdrożeń: od 25 tys. zł do 0,5 mln zł', 5, 5, 5, FALSE),
+
+(2, '15.', 'Udział w zespołach badawczych / interdyscyplinarnych', NULL, 2, 4, TRUE),
+
+-- === Grupa 3: Działalność dydaktyczna (Lp. 16-37) ===
+(3, '16.', 'Autorstwo podręcznika akademickiego/skryptu', 40, 40, 40, FALSE),
+(3, '17.', 'Autorstwo rozdziału w podręczniku akademickim/skrypcie', 10, 10, 10, FALSE),
+(3, '18.', 'Redakcja wieloautorskiego podręcznika akademickiego/skryptu', 10, 10, 10, FALSE),
+(3, '19.', 'Ocena na podstawie ankiet studentów i doktorantów', NULL, 0, 10, FALSE),
+(3, '20.', 'Ocena z hospitacji zajęć dydaktycznych', NULL, 0, 10, FALSE),
+(3, '21.', 'Liczba godzin w pensum dydaktycznym', NULL, 10, NULL, FALSE),
+(3, '22.', 'Funkcja promotora rozprawy doktorskiej (rocznie)', 12, 12, 12, TRUE),
+(3, '23.', 'Funkcja promotora rozprawy doktorskiej (zakończona nadaniem stopnia)', 12, 12, 12, FALSE),
+(3, '24.', 'Funkcja promotora pomocniczego rozprawy doktorskiej (rocznie)', 8, 8, 8, TRUE),
+(3, '25.', 'Funkcja promotora pomocniczego rozprawy doktorskiej (zakończona nadaniem stopnia)', 8, 8, 8, FALSE),
+(3, '26.', 'Udział w komisji egzaminacyjnej w przewodzie doktorskim', 5, 5, 5, FALSE),
+
+-- Rozbicie punktu 27 (Promotorstwo prac dyplomowych)
+(3, '27a.', 'Promotorstwo pracy magisterskiej', 6, 6, 6, FALSE),
+(3, '27b.', 'Promotorstwo pracy inżynierskiej / licencjackiej', 4, 4, 4, FALSE),
+
+-- Rozbicie punktu 28 (Recenzje prac dyplomowych)
+(3, '28a.', 'Recenzja pracy magisterskiej', 3, 3, 3, FALSE),
+(3, '28b.', 'Recenzja pracy inżynierskiej / licencjackiej', 2, 2, 2, FALSE),
+
+-- Rozbicie punktu 29 (Koordynator projektu dydaktycznego)
+(3, '29a.', 'Koordynator uczelniany projektu dydaktycznego/inwestycyjnego', 3, 3, 3, TRUE),
+(3, '29b.', 'Koordynator wydziałowy projektu dydaktycznego/inwestycyjnego', 2, 2, 2, TRUE),
+(3, '29c.', 'Koordynator zadania / członek zespołu w projekcie dydaktycznym', 1, 1, 1, TRUE),
+
+(3, '30.', 'Autorstwo programu nowego przedmiotu', 5, 5, 5, FALSE),
+(3, '31.', 'Przygotowanie i uruchomienie nowego laboratorium', 10, 10, 10, FALSE),
+(3, '32.', 'Opracowanie nowego kierunku studiów', NULL, NULL, 25, FALSE),
+(3, '33.', 'Opieka nad działającym kołem naukowym', 3, 3, 3, TRUE),
+(3, '34.', 'Podniesienie kwalifikacji zawodowych (udział w szkoleniu/kursie)', 5, 5, 5, FALSE),
+(3, '35.', 'Prowadzenie kursów i szkoleń podnoszących kwalifikacje', 10, 10, 10, FALSE),
+(3, '36.', 'Opieka nad laboratorium', NULL, NULL, 10, TRUE),
+(3, '37.', 'Udział w międzynarodowych programach wymiany akademickiej', 2, 2, 2, FALSE),
+
+-- === Grupa 4: Działalność organizacyjna (Lp. 38-66) ===
+
+-- Rozbicie punktu 38 (Funkcje kierownicze główne)
+(4, '38a.', 'Pełnienie funkcji Rektora / Prorektora', 35, 35, 35, TRUE),
+(4, '38b.', 'Pełnienie funkcji Dziekana', 25, 25, 25, TRUE),
+(4, '38c.', 'Pełnienie funkcji Kierownika Szkoły Doktorskiej', 20, 20, 20, TRUE),
+(4, '38d.', 'Pełnienie funkcji Prodziekana', 15, 15, 15, TRUE),
+(4, '38e.', 'Pełnienie funkcji Kierownika Katedry / Jednostki Międzywydziałowej', 10, 10, 10, TRUE),
+
+-- Rozbicie punktu 39 (Pełnomocnicy)
+(4, '39a.', 'Pełnienie funkcji pełnomocnika / koordynatora Rektora', 12, 12, 12, TRUE),
+(4, '39b.', 'Pełnienie funkcji pełnomocnika / koordynatora Dziekana', 6, 6, 6, TRUE),
+
+(4, '40.', 'Kierownik studiów doktoranckich / biura studentów zagranicznych', 8, 8, 8, TRUE),
+
+-- Rozbicie punktu 41 (Władze towarzystw)
+(4, '41a.', 'Władze centralne towarzystw naukowych / organizacji branżowych', 8, 8, 8, TRUE),
+(4, '41b.', 'Władze krajowe towarzystw naukowych / organizacji branżowych', 6, 6, 6, TRUE),
+(4, '41c.', 'Władze regionalne towarzystw naukowych / organizacji branżowych', 4, 4, 4, TRUE),
+
+-- Rozbicie punktu 42 (Konferencja MIĘDZYNARODOWA)
+(4, '42a.', 'Konferencja Międzynarodowa: Przewodniczący komitetu', 20, 20, 20, FALSE),
+(4, '42b.', 'Konferencja Międzynarodowa: Sekretarz / Zastępca przewodniczącego', 15, 15, 15, FALSE),
+(4, '42c.', 'Konferencja Międzynarodowa: Członek komitetu', NULL, NULL, 10, FALSE),
+
+-- Rozbicie punktu 43 (Konferencja KRAJOWA)
+(4, '43a.', 'Konferencja Krajowa: Przewodniczący komitetu', 15, 15, 15, FALSE),
+(4, '43b.', 'Konferencja Krajowa: Sekretarz / Zastępca przewodniczącego', 10, 10, 10, FALSE),
+(4, '43c.', 'Konferencja Krajowa: Członek komitetu', 3, 3, 3, FALSE),
+
+-- Rozbicie punktu 44 (Konferencja STUDENCKA)
+(4, '44a.', 'Konferencja Studencka: Przewodniczący komitetu', 8, 8, 8, FALSE),
+(4, '44b.', 'Konferencja Studencka: Sekretarz komitetu', 4, 4, 4, FALSE),
+(4, '44c.', 'Konferencja Studencka: Członek komitetu', 2, 2, 2, FALSE),
+
+-- Rozbicie punktu 45 (Kursy studenckie, olimpiady - poza pensum)
+(4, '45a.', 'Org. kursów/olimpiad: Poziom ogólnopolski/zewnętrzny', 8, 8, 8, FALSE),
+(4, '45b.', 'Org. kursów/olimpiad: Poziom uczelniany', 4, 4, 4, FALSE),
+(4, '45c.', 'Org. wycieczek dydaktycznych / inne mniejsze formy', 2, 2, 2, FALSE),
+
+-- Rozbicie punktu 46 (Nagrody Państwowe)
+(4, '46a.', 'Nagroda Prezydenta RP / Premiera', 20, 20, 20, FALSE),
+(4, '46b.', 'Nagroda Ministra', 10, 10, 10, FALSE),
+(4, '46c.', 'Nagroda Marszałka / Wojewody / Prezydenta Miasta', 5, 5, 5, FALSE),
+
+-- Rozbicie punktu 47 (Promotorstwo nagrodzonych prac)
+(4, '47a.', 'Nagrodzona praca: Poziom międzynarodowy', 15, 15, 15, FALSE),
+(4, '47b.', 'Nagrodzona praca: Poziom krajowy', 10, 10, 10, FALSE),
+(4, '47c.', 'Nagrodzona praca: Poziom regionalny', 5, 5, 5, FALSE),
+(4, '47d.', 'Nagrodzona praca: Poziom uczelniany', 3, 3, 3, FALSE),
+
+-- Rozbicie punktu 48 (Inne nagrody własne)
+(4, '48a.', 'Inna nagroda: Poziom międzynarodowy', 10, 10, 10, FALSE),
+(4, '48b.', 'Inna nagroda: Poziom krajowy', 5, 5, 5, FALSE),
+(4, '48c.', 'Inna nagroda: Poziom regionalny', 3, 3, 3, FALSE),
+
+-- Rozbicie punktu 49 (Nagrody edukacyjne)
+(4, '49a.', 'Nagroda edukacyjna: Zagraniczna', 5, 5, 5, FALSE),
+(4, '49b.', 'Nagroda edukacyjna: Krajowa', 3, 3, 3, FALSE),
+
+(4, '50.', 'Członkostwo w komisjach rektorskich/senackich (bez funkcji)', 3, 3, 3, TRUE),
+(4, '51.', 'Przewodniczenie w komisjach rektorskich/senackich', 4, 4, 4, TRUE),
+
+-- Rozbicie punktu 52 (Komisja Jakości Kształcenia - członek)
+(4, '52a.', 'Komisja Jakości Kształcenia (Uczelniana): Członek', 10, 10, 10, TRUE),
+(4, '52b.', 'Komisja Jakości Kształcenia (Wydziałowa): Członek', 5, 5, 5, TRUE),
+
+-- Rozbicie punktu 53 (Komisja Jakości Kształcenia - przew.)
+(4, '53a.', 'Komisja Jakości Kształcenia (Uczelniana): Przewodniczący', 15, 15, 15, TRUE),
+(4, '53b.', 'Komisja Jakości Kształcenia (Wydziałowa): Przewodniczący', 10, 10, 10, TRUE),
+
+-- Rozbicie punktu 54 (Komisja Rekrutacyjna)
+(4, '54a.', 'Komisja Rekrutacyjna: Wydziałowa', 6, 6, 6, FALSE),
+(4, '54b.', 'Komisja Rekrutacyjna: Doktorancka', 3, 3, 3, FALSE),
+
+-- Rozbicie punktu 55 (Opiekun roku)
+(4, '55a.', 'Opiekun praktyk studenckich', 10, 10, 10, TRUE),
+(4, '55b.', 'Opiekun roku studenckiego', 5, 5, 5, TRUE),
+
+(4, '56.', 'Członkostwo w komisjach powołanych przez kierownika', 4, 4, 4, TRUE),
+
+-- Rozbicie punktu 57 (Władze towarzystw - inne)
+(4, '57a.', 'Władze zagraniczne/międzynarodowe towarzystw naukowych', 4, 4, 4, TRUE),
+(4, '57b.', 'Władze krajowe towarzystw naukowych', 2, 2, 2, TRUE),
+
+-- Rozbicie punktu 58 (PAN)
+(4, '58a.', 'Członkostwo w PAN', 25, 25, 25, TRUE),
+(4, '58b.', 'Członkostwo w komitecie PAN', 15, 15, 15, TRUE),
+(4, '58c.', 'Członek stowarzyszony z sekcją PAN', 4, 4, 4, TRUE),
+(4, '58d.', 'Ekspert / członek komisji PAN', 2, 2, 2, TRUE),
+
+-- Rozbicie punktu 59 (Instytucje centralne)
+(4, '59a.', 'Działalność w panelach instytucji centralnych (PKA, RDN, NCN)', 20, 20, 20, TRUE),
+(4, '59b.', 'Działalność w instytucjach regionalnych', 5, 5, 5, TRUE),
+
+-- Rozbicie punktu 60 (Targi)
+(4, '60a.', 'Udział w targach: Międzynarodowych', 3, 3, 3, FALSE),
+(4, '60b.', 'Udział w targach: Krajowych', 1, 1, 1, FALSE),
+
+-- Rozbicie punktu 61 (Redaktor czasopisma)
+(4, '61a.', 'Redaktor naczelny czasopisma naukowego', 10, 10, 10, TRUE),
+(4, '61b.', 'Redaktor numeru / tematyczny', 5, 5, 5, FALSE),
+
+(4, '62.', 'Wystąpienia w mediach jako ekspert', 3, 3, 3, FALSE),
+(4, '63.', 'Tłumaczenia / korekty językowe (SJO)', 2, 2, 2, FALSE),
+(4, '64.', 'Organizacja Dni Sportu / imprez kulturalnych', 10, 10, 10, FALSE),
+(4, '65.', 'Inne działania promocyjne', NULL, NULL, 10, FALSE),
+(4, '66.', 'Inne prace organizacyjne', NULL, NULL, 6, FALSE);
 
 --4. STOPNIE NAUKOWE
 INSERT INTO stopnie_naukowe (nazwa_stopnia) VALUES
