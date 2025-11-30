@@ -118,3 +118,28 @@ FROM
 LEFT JOIN
     suma_aktywnosci sa ON ps.id_pracownika = sa.id_pracownika 
                       AND ps.kod_grupy = sa.kod_grupy;
+
+CREATE OR REPLACE VIEW v_dashboard_podsumowanie_live AS
+WITH parametry AS (
+    -- Pobieramy ustawienia z naszego filtra (zawsze 1 rekord)
+    SELECT id_wybranego_pracownika, data_od, data_do FROM filtr_globalny WHERE id_filtra = 1
+),
+sumy AS (
+    SELECT 
+        sta.id_grupy,
+        SUM(ap.przyznane_punkty) as suma
+    FROM aktywnosci_pracownika ap
+    JOIN sl_typy_aktywnosci sta ON ap.id_typu_aktywnosci = sta.id_typu_aktywnosci
+    CROSS JOIN parametry p
+    WHERE 
+        ap.id_pracownika = p.id_wybranego_pracownika
+        AND ap.data_rozpoczecia >= p.data_od 
+        AND ap.data_rozpoczecia <= p.data_do
+    GROUP BY sta.id_grupy
+)
+SELECT 
+    sgd.nazwa_grupy,
+    sgd.kod_grupy,
+    COALESCE(s.suma, 0) as suma_punktow
+FROM sl_grupy_dzialan sgd
+LEFT JOIN sumy s ON sgd.id_grupy = s.id_grupy;
