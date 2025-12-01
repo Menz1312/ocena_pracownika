@@ -26,8 +26,8 @@ INSERT INTO typy_stanowisk (nazwa_typu, prog_punktowy_total, prog_punktowy_pub, 
 INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, punkty_min, punkty_max, czy_ciagla) VALUES
 
 -- === Grupa 1: Działalność publikacyjna (Lp. 1-5) ===
-(1, '1.', 'Publikacja w czasopiśmie naukowym wymienionym w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
-(1, '2.', 'Publikacja w recenzowanych materiałach z konferencji międzynarodowej wymienionej w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
+(1, '1.', 'Publikacja w czasopiśmie naukowym wymienionym w wykazie właściwego ministra', NULL, NULL, 20, FALSE),
+(1, '2.', 'Publikacja w recenzowanych materiałach z konferencji międzynarodowej wymienionej w wykazie właściwego ministra', NULL, NULL, 20, FALSE),
 (1, '3.', 'Monografia naukowa wydana przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
 (1, '4.', 'Rozdział w monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
 (1, '5.', 'Redakcja monografii naukowej wydanej przez wydawnictwa wymienione w wykazie właściwego ministra', NULL, NULL, NULL, FALSE),
@@ -61,15 +61,16 @@ INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, 
 (2, '14c.', 'Przychody z wdrożeń: powyżej 0,5 mln zł do 2,5 mln zł', 20, 20, 20, FALSE),
 (2, '14d.', 'Przychody z wdrożeń: od 25 tys. zł do 0,5 mln zł', 5, 5, 5, FALSE),
 
-(2, '15.', 'Udział w zespołach badawczych / interdyscyplinarnych', NULL, 2, 4, TRUE),
+(2, '15a.', 'Udział w zespołach badawczych (za każdy udział)', 2, NULL, 2, TRUE),
+(2, '15b.', 'Udział w zespołach badawczych interdyscyplinarnych (za każdy udział)', 4, NULL, 4, TRUE),
 
 -- === Grupa 3: Działalność dydaktyczna (Lp. 16-37) ===
-(3, '16.', 'Autorstwo podręcznika akademickiego/skryptu', 40, 40, 40, FALSE),
-(3, '17.', 'Autorstwo rozdziału w podręczniku akademickim/skrypcie', 10, 10, 10, FALSE),
-(3, '18.', 'Redakcja wieloautorskiego podręcznika akademickiego/skryptu', 10, 10, 10, FALSE),
+(3, '16.', 'Autorstwo podręcznika akademickiego/skryptu', 40, NULL, 40, FALSE),
+(3, '17.', 'Autorstwo rozdziału w podręczniku akademickim/skrypcie', 10, NULL, 10, FALSE),
+(3, '18.', 'Redakcja wieloautorskiego podręcznika akademickiego/skryptu', 10, NULL, 10, FALSE),
 (3, '19.', 'Ocena na podstawie ankiet studentów i doktorantów', NULL, 0, 10, FALSE),
 (3, '20.', 'Ocena z hospitacji zajęć dydaktycznych', NULL, 0, 10, FALSE),
-(3, '21.', 'Liczba godzin w pensum dydaktycznym', NULL, 10, NULL, FALSE),
+(3, '21.', 'Liczba godzin w pensum dydaktycznym', 10, 10, NULL, FALSE),
 (3, '22.', 'Funkcja promotora rozprawy doktorskiej (rocznie)', 12, 12, 12, TRUE),
 (3, '23.', 'Funkcja promotora rozprawy doktorskiej (zakończona nadaniem stopnia)', 12, 12, 12, FALSE),
 (3, '24.', 'Funkcja promotora pomocniczego rozprawy doktorskiej (rocznie)', 8, 8, 8, TRUE),
@@ -89,8 +90,8 @@ INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, 
 (3, '29b.', 'Koordynator wydziałowy projektu dydaktycznego/inwestycyjnego', 2, 2, 2, TRUE),
 (3, '29c.', 'Koordynator zadania / członek zespołu w projekcie dydaktycznym', 1, 1, 1, TRUE),
 
-(3, '30.', 'Autorstwo programu nowego przedmiotu', 5, 5, 5, FALSE),
-(3, '31.', 'Przygotowanie i uruchomienie nowego laboratorium', 10, 10, 10, FALSE),
+(3, '30.', 'Autorstwo programu nowego przedmiotu', 5, NULL, 5, FALSE),
+(3, '31.', 'Przygotowanie i uruchomienie nowego laboratorium', 10, NULL, 10, FALSE),
 (3, '32.', 'Opracowanie nowego kierunku studiów', NULL, NULL, 25, FALSE),
 (3, '33.', 'Opieka nad działającym kołem naukowym', 3, 3, 3, TRUE),
 (3, '34.', 'Podniesienie kwalifikacji zawodowych (udział w szkoleniu/kursie)', 5, 5, 5, FALSE),
@@ -101,83 +102,83 @@ INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, 
 -- === Grupa 4: Działalność organizacyjna (Lp. 38-66) ===
 
 -- Rozbicie punktu 38 (Funkcje kierownicze główne)
-(4, '38a.', 'Pełnienie funkcji Rektora / Prorektora', 35, 35, 35, TRUE),
-(4, '38b.', 'Pełnienie funkcji Dziekana', 25, 25, 25, TRUE),
-(4, '38c.', 'Pełnienie funkcji Kierownika Szkoły Doktorskiej', 20, 20, 20, TRUE),
-(4, '38d.', 'Pełnienie funkcji Prodziekana', 15, 15, 15, TRUE),
-(4, '38e.', 'Pełnienie funkcji Kierownika Katedry / Jednostki Międzywydziałowej', 10, 10, 10, TRUE),
+(4, '38a.', 'Funkcja prorektora', 35, 35, 35, TRUE),
+(4, '38b.', 'Funkcja dziekana', 25, 25, 25, TRUE),
+(4, '38c.', 'Funkcja kierownika szkoły doktorskiej, prodziekana ds. dydaktycznych, prodziekana ds. rozwoju, kierownika jednostki wydziałowej', 20, 20, 20, TRUE),
+(4, '38d.', 'Funkcja zastępcy: prodziekana ds. dydaktycznych, kierownika jednostki międzywydziałowej, kierownika katedry', 15, 15, 15, TRUE),
+(4, '38e.', 'Funkcja zastępcy kierownika katedry', 10, 10, 10, TRUE),
 
 -- Rozbicie punktu 39 (Pełnomocnicy)
-(4, '39a.', 'Pełnienie funkcji pełnomocnika / koordynatora Rektora', 12, 12, 12, TRUE),
-(4, '39b.', 'Pełnienie funkcji pełnomocnika / koordynatora Dziekana', 6, 6, 6, TRUE),
+(4, '39a.', 'Pełnienie funkcji pełnomocnika lub koordynatora rektora', 12, 12, 12, TRUE),
+(4, '39b.', 'Pełnienie funkcji pełnomocnika lub koordynatora dziekana', 6, 6, 6, TRUE),
 
-(4, '40.', 'Kierownik studiów doktoranckich / biura studentów zagranicznych', 8, 8, 8, TRUE),
+(4, '40.', 'Pełnienie funkcji kierownika studiów doktoranckich lub kierownika biura studentów zagranicznych', 8, 8, 8, TRUE),
 
 -- Rozbicie punktu 41 (Władze towarzystw)
-(4, '41a.', 'Władze centralne towarzystw naukowych / organizacji branżowych', 8, 8, 8, TRUE),
-(4, '41b.', 'Władze krajowe towarzystw naukowych / organizacji branżowych', 6, 6, 6, TRUE),
-(4, '41c.', 'Władze regionalne towarzystw naukowych / organizacji branżowych', 4, 4, 4, TRUE),
+(4, '41a.', 'Udział z wyboru we władzach centralnych towarzystw naukowych', 8, 8, 8, TRUE),
+(4, '41b.', 'Udział z wyboru we władzach centralnych związków i organizacji branżowych krajowych', 6, 6, 6, TRUE),
+(4, '41c.', 'Udział z wyboru we władzach centralnych związków i organizacji branżowych regionalnych', 4, 4, 4, TRUE),
 
 -- Rozbicie punktu 42 (Konferencja MIĘDZYNARODOWA)
-(4, '42a.', 'Konferencja Międzynarodowa: Przewodniczący komitetu', 20, 20, 20, FALSE),
-(4, '42b.', 'Konferencja Międzynarodowa: Sekretarz / Zastępca przewodniczącego', 15, 15, 15, FALSE),
-(4, '42c.', 'Konferencja Międzynarodowa: Członek komitetu', NULL, NULL, 10, FALSE),
+(4, '42a.', 'Organizacja międzynarodowej konferencji naukowej/dydaktycznej: przewodniczący komitetu', 20, 20, 20, FALSE),
+(4, '42b.', 'Organizacja międzynarodowej konferencji naukowej/dydaktycznej: sekretarz lub zastępca przewodniczącego', 15, 15, 15, FALSE),
+(4, '42c.', 'Organizacja międzynarodowej konferencji naukowej/dydaktycznej: członek komitetu', NULL, NULL, 10, FALSE),
 
 -- Rozbicie punktu 43 (Konferencja KRAJOWA)
-(4, '43a.', 'Konferencja Krajowa: Przewodniczący komitetu', 15, 15, 15, FALSE),
-(4, '43b.', 'Konferencja Krajowa: Sekretarz / Zastępca przewodniczącego', 10, 10, 10, FALSE),
-(4, '43c.', 'Konferencja Krajowa: Członek komitetu', 3, 3, 3, FALSE),
+(4, '43a.', 'Organizacja krajowej konferencji naukowej/dydaktycznej: przewodniczący komitetu', 15, 15, 15, FALSE),
+(4, '43b.', 'Organizacja krajowej konferencji naukowej/dydaktycznej: sekretarz lub zastępca przewodniczącego', 10, 10, 10, FALSE),
+(4, '43c.', 'Organizacja krajowej konferencji naukowej/dydaktycznej: członek komitetu', 3, 3, 3, FALSE),
 
 -- Rozbicie punktu 44 (Konferencja STUDENCKA)
-(4, '44a.', 'Konferencja Studencka: Przewodniczący komitetu', 8, 8, 8, FALSE),
-(4, '44b.', 'Konferencja Studencka: Sekretarz komitetu', 4, 4, 4, FALSE),
-(4, '44c.', 'Konferencja Studencka: Członek komitetu', 2, 2, 2, FALSE),
+(4, '44a.', 'Organizacja konferencji studenckiej: przewodniczący komitetu', 8, 8, 8, FALSE),
+(4, '44b.', 'Organizacja konferencji studenckiej: sekretarz komitetu', 4, 4, 4, FALSE),
+(4, '44c.', 'Organizacja konferencji studenckiej: członek komitetu', 2, 2, 2, FALSE),
 
 -- Rozbicie punktu 45 (Kursy studenckie, olimpiady - poza pensum)
-(4, '45a.', 'Org. kursów/olimpiad: Poziom ogólnopolski/zewnętrzny', 8, 8, 8, FALSE),
-(4, '45b.', 'Org. kursów/olimpiad: Poziom uczelniany', 4, 4, 4, FALSE),
-(4, '45c.', 'Org. wycieczek dydaktycznych / inne mniejsze formy', 2, 2, 2, FALSE),
+(4, '45a.', 'Organizacja i przeprowadzenie kursów studenckich, olimpiad przedmiotowych', 8, 8, 8, FALSE),
+(4, '45b.', 'Organizacja i przeprowadzenie konkursów zewnętrznych', 4, 4, 4, FALSE),
+(4, '45c.', 'Organizacja i przeprowadzenie zajęć dla szkół średnich, uczelnianych rozgrywek sportowych, uczelnianych konkursów tematycznych, wycieczek dydaktycznych', 2, 2, 2, FALSE),
 
 -- Rozbicie punktu 46 (Nagrody Państwowe)
-(4, '46a.', 'Nagroda Prezydenta RP / Premiera', 20, 20, 20, FALSE),
-(4, '46b.', 'Nagroda Ministra', 10, 10, 10, FALSE),
-(4, '46c.', 'Nagroda Marszałka / Wojewody / Prezydenta Miasta', 5, 5, 5, FALSE),
+(4, '46a.', 'Nagroda prezydenta, premiera', 20, 20, 20, FALSE),
+(4, '46b.', 'Nagroda ministra', 10, 10, 10, FALSE),
+(4, '46c.', 'Nagroda marszałka województwa, wojewody, prezydenta miasta', 5, 5, 5, FALSE),
 
 -- Rozbicie punktu 47 (Promotorstwo nagrodzonych prac)
-(4, '47a.', 'Nagrodzona praca: Poziom międzynarodowy', 15, 15, 15, FALSE),
-(4, '47b.', 'Nagrodzona praca: Poziom krajowy', 10, 10, 10, FALSE),
-(4, '47c.', 'Nagrodzona praca: Poziom regionalny', 5, 5, 5, FALSE),
-(4, '47d.', 'Nagrodzona praca: Poziom uczelniany', 3, 3, 3, FALSE),
+(4, '47a.', 'Promotorstwo wyróżnionych lub nagrodzonych prac: poziom międzynarodowy', 15, 15, 15, FALSE),
+(4, '47b.', 'Promotorstwo wyróżnionych lub nagrodzonych prac: poziom krajowy', 10, 10, 10, FALSE),
+(4, '47c.', 'Promotorstwo wyróżnionych lub nagrodzonych prac: poziom regionalny', 5, 5, 5, FALSE),
+(4, '47d.', 'Promotorstwo wyróżnionych lub nagrodzonych prac: poziom uczelniany', 3, 3, 3, FALSE),
 
 -- Rozbicie punktu 48 (Inne nagrody własne)
-(4, '48a.', 'Inna nagroda: Poziom międzynarodowy', 10, 10, 10, FALSE),
-(4, '48b.', 'Inna nagroda: Poziom krajowy', 5, 5, 5, FALSE),
-(4, '48c.', 'Inna nagroda: Poziom regionalny', 3, 3, 3, FALSE),
+(4, '48a.', 'Uzyskanie nagrody innej niż wymieniona powyżej, na poziomie międzynarodowym', 10, 10, 10, FALSE),
+(4, '48b.', 'Uzyskanie nagrody innej niż wymieniona powyżej, na poziomie krajowym', 5, 5, 5, FALSE),
+(4, '48c.', 'Uzyskanie nagrody innej niż wymieniona powyżej, na poziomie regionalnym', 3, 3, 3, FALSE),
 
 -- Rozbicie punktu 49 (Nagrody edukacyjne)
-(4, '49a.', 'Nagroda edukacyjna: Zagraniczna', 5, 5, 5, FALSE),
-(4, '49b.', 'Nagroda edukacyjna: Krajowa', 3, 3, 3, FALSE),
+(4, '49a.', 'Nagrody przyznawane przez zagraniczne instytucje edukacyjne', 5, NULL, 5, FALSE),
+(4, '49b.', 'Nagrody przyznawane przez krajowe instytucje edukacyjne', 3, NULL, 3, FALSE),
 
 (4, '50.', 'Członkostwo w komisjach rektorskich/senackich (bez funkcji)', 3, 3, 3, TRUE),
 (4, '51.', 'Przewodniczenie w komisjach rektorskich/senackich', 4, 4, 4, TRUE),
 
 -- Rozbicie punktu 52 (Komisja Jakości Kształcenia - członek)
-(4, '52a.', 'Komisja Jakości Kształcenia (Uczelniana): Członek', 10, 10, 10, TRUE),
-(4, '52b.', 'Komisja Jakości Kształcenia (Wydziałowa): Członek', 5, 5, 5, TRUE),
+(4, '52a.', 'Komisja Jakości Kształcenia (Uczelniana): Członek', 10, NULL, 10, TRUE),
+(4, '52b.', 'Komisja Jakości Kształcenia (Wydziałowa): Członek', 5, NULL, 5, TRUE),
 
 -- Rozbicie punktu 53 (Komisja Jakości Kształcenia - przew.)
 (4, '53a.', 'Komisja Jakości Kształcenia (Uczelniana): Przewodniczący', 15, 15, 15, TRUE),
 (4, '53b.', 'Komisja Jakości Kształcenia (Wydziałowa): Przewodniczący', 10, 10, 10, TRUE),
 
 -- Rozbicie punktu 54 (Komisja Rekrutacyjna)
-(4, '54a.', 'Komisja Rekrutacyjna: Wydziałowa', 6, 6, 6, FALSE),
-(4, '54b.', 'Komisja Rekrutacyjna: Doktorancka', 3, 3, 3, FALSE),
+(4, '54a.', 'Komisja Rekrutacyjna: Wydziałowa', 6, 6, 9, FALSE),
+(4, '54b.', 'Komisja Rekrutacyjna: Doktorancka', 3, 3, 6, FALSE),
 
 -- Rozbicie punktu 55 (Opiekun roku)
 (4, '55a.', 'Opiekun praktyk studenckich', 10, 10, 10, TRUE),
 (4, '55b.', 'Opiekun roku studenckiego', 5, 5, 5, TRUE),
 
-(4, '56.', 'Członkostwo w komisjach powołanych przez kierownika', 4, 4, 4, TRUE),
+(4, '56.', 'Członkostwo w komisjach powołanych przez kierownika', 4, 4, 7, TRUE),
 
 -- Rozbicie punktu 57 (Władze towarzystw - inne)
 (4, '57a.', 'Władze zagraniczne/międzynarodowe towarzystw naukowych', 4, 4, 4, TRUE),
@@ -186,8 +187,8 @@ INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, 
 -- Rozbicie punktu 58 (PAN)
 (4, '58a.', 'Członkostwo w PAN', 25, 25, 25, TRUE),
 (4, '58b.', 'Członkostwo w komitecie PAN', 15, 15, 15, TRUE),
-(4, '58c.', 'Członek stowarzyszony z sekcją PAN', 4, 4, 4, TRUE),
-(4, '58d.', 'Ekspert / członek komisji PAN', 2, 2, 2, TRUE),
+(4, '58c.', 'Członek stowarzyszony z sekcją PAN, ekspert', 4, 4, 4, TRUE),
+(4, '58d.', 'Członek komisji PAN', 2, 2, 2, TRUE),
 
 -- Rozbicie punktu 59 (Instytucje centralne)
 (4, '59a.', 'Działalność w panelach instytucji centralnych (PKA, RDN, NCN)', 20, 20, 20, TRUE),
@@ -198,8 +199,8 @@ INSERT INTO sl_typy_aktywnosci (id_grupy, lp, nazwa_parametru, punkty_domyslne, 
 (4, '60b.', 'Udział w targach: Krajowych', 1, 1, 1, FALSE),
 
 -- Rozbicie punktu 61 (Redaktor czasopisma)
-(4, '61a.', 'Redaktor naczelny czasopisma naukowego', 10, 10, 10, TRUE),
-(4, '61b.', 'Redaktor numeru / tematyczny', 5, 5, 5, FALSE),
+(4, '61a.', 'Redaktor czasopisma naukowego', 10, 10, 10, TRUE),
+(4, '61b.', 'Redaktor numeru czasopisma naukowego', 5, 5, 5, FALSE),
 
 (4, '62.', 'Wystąpienia w mediach jako ekspert', 3, 3, 3, FALSE),
 (4, '63.', 'Tłumaczenia / korekty językowe (SJO)', 2, 2, 2, FALSE),

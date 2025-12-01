@@ -143,3 +143,22 @@ SELECT
     COALESCE(s.suma, 0) as suma_punktow
 FROM sl_grupy_dzialan sgd
 LEFT JOIN sumy s ON sgd.id_grupy = s.id_grupy;
+
+CREATE OR REPLACE VIEW v_raport_1_agregacja AS
+SELECT
+    -- Wyciągamy sam numer (np. '14' z '14a.') używając wyrażenia regularnego
+    CAST(SUBSTRING(sta.lp FROM '^[0-9]+') AS INTEGER) as numer_lp,
+    
+    -- Sumujemy punkty dla tego numeru
+    SUM(ap.przyznane_punkty) as suma_punktow
+    
+FROM 
+    aktywnosci_pracownika ap
+    JOIN sl_typy_aktywnosci sta ON ap.id_typu_aktywnosci = sta.id_typu_aktywnosci
+    JOIN filtr_globalny f ON ap.id_pracownika = f.id_wybranego_pracownika
+WHERE 
+    -- Filtrowanie po dacie z Dashboardu
+    ap.data_rozpoczecia >= f.data_od 
+    AND ap.data_rozpoczecia <= f.data_do
+GROUP BY 
+    numer_lp;
