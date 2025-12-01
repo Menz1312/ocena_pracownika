@@ -6,7 +6,6 @@ CREATE TABLE filtr_globalny (
     id_wybranego_pracownika INT REFERENCES pracownicy(id_pracownika),
     data_od DATE DEFAULT '2023-01-01',
     data_do DATE DEFAULT '2025-12-31',
-    id_aktywnosci_do_edycji INT,
     CONSTRAINT tylko_jeden_rekord CHECK (id_filtra = 1)
 );
 
