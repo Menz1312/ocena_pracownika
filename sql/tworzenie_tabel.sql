@@ -103,15 +103,19 @@ CREATE TABLE aktywnosci_pracownika (
 
 CREATE TABLE oceny_okresowe (
     id_oceny SERIAL PRIMARY KEY,
-    id_pracownika INT NOT NULL REFERENCES pracownicy(id_pracownika),
+    id_pracownika INT NOT NULL,
     okres_od DATE NOT NULL,
     okres_do DATE NOT NULL,
     data_oceny DATE NOT NULL,
-    wynik_koncowy VARCHAR(50), -- "pozytywna", "negatywna", "pozytywna warunkowa"
-    suma_pkt_pub NUMERIC(6, 2), -- Suma z grupy 'PUB'
-    suma_pkt_br NUMERIC(6, 2),  -- Suma z grupy 'BR' (Dodane)
-    suma_pkt_dyd NUMERIC(6, 2), -- Suma z grupy 'DYD' (Poprawiona literówka)
-    suma_pkt_org NUMERIC(6, 2), -- Suma z grupy 'ORG'
-    suma_pkt_total NUMERIC(7, 2), -- Suma całkowita
-    uzasadnienie TEXT
+    wynik_koncowy VARCHAR(50), 
+    suma_pkt_pub NUMERIC(6, 2), 
+    suma_pkt_br NUMERIC(6, 2),  
+    suma_pkt_dyd NUMERIC(6, 2), 
+    suma_pkt_org NUMERIC(6, 2), 
+    suma_pkt_total NUMERIC(7, 2), 
+    uzasadnienie TEXT,
+    CONSTRAINT fk_ocena_pracownik 
+        FOREIGN KEY (id_pracownika) 
+        REFERENCES pracownicy(id_pracownika) 
+        ON DELETE CASCADE
 );
