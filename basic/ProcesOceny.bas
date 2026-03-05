@@ -390,3 +390,247 @@ Sub Ocena_ZmienFiltrOkresu(oEvent As Object)
     
     oForm.reload()
 End Sub
+
+' =====================================================================
+' MAKRO Odwolawcza_ZmienFiltrPracownika: Zmiana Pracownika (BEZ LAGÓW)
+' =====================================================================
+Sub Odwolawcza_ZmienFiltrPracownika(oEvent As Object)
+    Dim oListBox As Object, oForm As Object, oSubForm As Object
+    Dim oStatement As Object, oRes As Object, oResOcena As Object
+    Dim sSQL As String
+    Dim iWybraneID As Integer, iOkresID As Integer
+    Dim bCzyOceniony As Boolean
+    
+    oListBox = oEvent.Source.Model
+    If IsEmpty(oListBox.SelectedValue) Then Exit Sub
+    oForm = oListBox.Parent
+    iWybraneID = CInt(oListBox.SelectedValue)
+    oStatement = oForm.ActiveConnection.createStatement()
+    
+    ' 1. Zmień filtr 
+    sSQL = "INSERT INTO pcz_oceny.filtr_uzytkownika (nazwa_uzytkownika, id_pracownika) VALUES (current_user, " & iWybraneID & ") ON CONFLICT (nazwa_uzytkownika) DO UPDATE SET id_pracownika = EXCLUDED.id_pracownika;"
+    oStatement.executeUpdate(sSQL)
+    
+    ' 2. Utwórz szkielet i sprawdź podpis
+    bCzyOceniony = False 
+    
+    sSQL = "SELECT id_okresu FROM pcz_oceny.filtr_uzytkownika WHERE nazwa_uzytkownika = current_user"
+    oRes = oStatement.executeQuery(sSQL)
+    If oRes.next() Then
+        iOkresID = oRes.getInt(1)
+        sSQL = "INSERT INTO pcz_oceny.oceny_okresowe (id_pracownika, id_okresu) SELECT " & iWybraneID & ", " & iOkresID & " WHERE NOT EXISTS (SELECT 1 FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = " & iWybraneID & " AND id_okresu = " & iOkresID & ")"
+        oStatement.executeUpdate(sSQL)
+        
+        sSQL = "SELECT odw_zatwierdzil_user FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = " & iWybraneID & " AND id_okresu = " & iOkresID
+        oResOcena = oStatement.executeQuery(sSQL)
+        If oResOcena.next() Then
+            If Not oResOcena.wasNull() Then
+                If oResOcena.getString(1) <> "" Then
+                    bCzyOceniony = True 
+                End If
+            End If
+        End If
+    End If
+    
+    ' 3. Ustaw flagę
+    If bCzyOceniony = False Then
+        bTrybWymuszonejEdycji = True  
+    Else
+        bTrybWymuszonejEdycji = False 
+    End If
+    
+    ' 4. KLUCZOWA POPRAWKA: Ręczne sterowanie SubFormem (eliminuje opóźnienie)
+    oForm.reload() ' Przeładowanie głównego (Link Master/Slave)
+    
+    If oForm.hasByName("SubForm_Decyzje") Then
+        oSubForm = oForm.getByName("SubForm_Decyzje")
+        oSubForm.reload() ' Wymuszenie pobrania danych
+        
+        ' Twarde ustawienie interfejsu TU I TERAZ
+        If bTrybWymuszonejEdycji = True Then
+            oSubForm.AllowUpdates = True
+            UstawStanInterfejsu(oSubForm, True)
+        Else
+            oSubForm.AllowUpdates = False
+            UstawStanInterfejsu(oSubForm, False)
+        End If
+    End If
+End Sub
+
+' =====================================================================
+' MAKRO Odwolawcza_ZmienFiltrOkresu: Zmiana Okresu (BEZ LAGÓW)
+' =====================================================================
+Sub Odwolawcza_ZmienFiltrOkresu(oEvent As Object)
+    Dim oListBox As Object, oForm As Object, oSubForm As Object
+    Dim oStatement As Object, oRes As Object, oResOcena As Object
+    Dim sSQL As String
+    Dim iWybraneID As Integer, iPracID As Integer
+    Dim bCzyOceniony As Boolean
+    
+    oListBox = oEvent.Source.Model
+    If IsEmpty(oListBox.SelectedValue) Then Exit Sub
+    oForm = oListBox.Parent
+    iWybraneID = CInt(oListBox.SelectedValue)
+    oStatement = oForm.ActiveConnection.createStatement()
+    
+    ' 1. Zmień filtr
+    sSQL = "INSERT INTO pcz_oceny.filtr_uzytkownika (nazwa_uzytkownika, id_okresu) VALUES (current_user, " & iWybraneID & ") ON CONFLICT (nazwa_uzytkownika) DO UPDATE SET id_okresu = EXCLUDED.id_okresu;"
+    oStatement.executeUpdate(sSQL)
+    
+    ' 2. Utwórz szkielet i sprawdź podpis
+    bCzyOceniony = False 
+    
+    sSQL = "SELECT id_pracownika FROM pcz_oceny.filtr_uzytkownika WHERE nazwa_uzytkownika = current_user"
+    oRes = oStatement.executeQuery(sSQL)
+    If oRes.next() Then
+        iPracID = oRes.getInt(1)
+        sSQL = "INSERT INTO pcz_oceny.oceny_okresowe (id_pracownika, id_okresu) SELECT " & iPracID & ", " & iWybraneID & " WHERE NOT EXISTS (SELECT 1 FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = " & iPracID & " AND id_okresu = " & iWybraneID & ")"
+        oStatement.executeUpdate(sSQL)
+        
+        sSQL = "SELECT odw_zatwierdzil_user FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = " & iPracID & " AND id_okresu = " & iWybraneID
+        oResOcena = oStatement.executeQuery(sSQL)
+        If oResOcena.next() Then
+            If Not oResOcena.wasNull() Then
+                If oResOcena.getString(1) <> "" Then
+                    bCzyOceniony = True 
+                End If
+            End If
+        End If
+    End If
+    
+    ' 3. Ustaw flagę
+    If bCzyOceniony = False Then
+        bTrybWymuszonejEdycji = True  
+    Else
+        bTrybWymuszonejEdycji = False 
+    End If
+    
+    ' 4. KLUCZOWA POPRAWKA
+    oForm.reload()
+    
+    If oForm.hasByName("SubForm_Decyzje") Then
+        oSubForm = oForm.getByName("SubForm_Decyzje")
+        oSubForm.reload()
+        
+        If bTrybWymuszonejEdycji = True Then
+            oSubForm.AllowUpdates = True
+            UstawStanInterfejsu(oSubForm, True)
+        Else
+            oSubForm.AllowUpdates = False
+            UstawStanInterfejsu(oSubForm, False)
+        End If
+    End If
+End Sub
+    
+    ' === USTAWIENIE FLAGI I ODŚWIEŻENIE ===
+    If bCzyOceniony = False Then
+        bTrybWymuszonejEdycji = True  ' Odblokowujemy
+    Else
+        bTrybWymuszonejEdycji = False ' Blokujemy
+    End If
+    
+    oForm.reload()
+End Sub
+
+' =====================================================================
+' MAKRO: Blokada/Odblokowanie interfejsu (Podepnij pod SubForm_Decyzje)
+' =====================================================================
+Sub Odwolawcza_PoZmianieRekordu(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source
+    
+    ' Upewniamy się, że to formularz bazy danych
+    If oForm.ImplementationName = "com.sun.star.comp.forms.ODatabaseForm" Then
+        
+        ' Sprawdzamy flagę ustawioną wcześniej przez makra filtrujące
+        If bTrybWymuszonejEdycji = False Then
+            ' 1. Blokujemy zapis danych
+            oForm.AllowUpdates = False
+            ' 2. Blokujemy wizualnie kontrolki (szare tło)
+            UstawStanInterfejsu(oForm, False) 
+        Else
+            ' 1. Odblokowujemy zapis
+            oForm.AllowUpdates = True
+            ' 2. Odblokowujemy wizualnie kontrolki
+            UstawStanInterfejsu(oForm, True)
+        End If
+        
+        ' Resetujemy flagę zapisu (standardowa procedura bezpieczeństwa)
+        bZezwolNaZapis = False
+    End If
+End Sub
+
+' =====================================================================
+' MAKRO ZatwierdzOceneOdwolawcza: Zapis dla Komisji Odwoławczej
+' =====================================================================
+Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
+    Dim oForm As Object
+    Dim oConn As Object
+    Dim oStmt As Object
+    Dim sSQL As String
+    Dim iPracID As Integer
+    Dim iOkresID As Integer
+    Dim sOdwZatwierdzil As String ' <--- POPRAWKA 1: Prawidłowa nazwa zmiennej
+    
+    oForm = oEvent.Source.Model.Parent
+    
+    ' =================================================================
+    ' TARCZA ANTY-FOKUSOWA: Wymuszamy zrzut danych z ekranu do pamięci
+    ' =================================================================
+    On Error Resume Next
+    Dim oCtrl As Object
+    oCtrl = ThisComponent.CurrentController.getControl(oEvent.Source.Model)
+    oCtrl.setFocus()
+    On Error GoTo 0
+    
+    ' Sprawdzamy, czy w bazie jest już podpis KOMISJI ODWOŁAWCZEJ
+    sOdwZatwierdzil = oForm.getString(oForm.findColumn("odw_zatwierdzil_user"))
+    
+    If sOdwZatwierdzil <> "" And bTrybWymuszonejEdycji = False Then
+        MsgBox "Formularz jest zablokowany. Kliknij 'Edytuj', aby wprowadzić zmiany.", 48, "Informacja"
+        Exit Sub
+    End If
+    
+    bZezwolNaZapis = True
+    oForm.AllowUpdates = True 
+    
+    ' POPRAWKA 2: Pancerne wymuszenie zapisu (tak jak w poprzednim formularzu)
+    If oForm.isModified Then
+        On Error GoTo BladWalidacji
+        oForm.updateRow()
+        On Error GoTo 0 
+    Else
+        ' Jeśli Base nie wykrył zmian mimo zmiany fokusu, wymuszamy zapis!
+        On Error GoTo BladWalidacji
+        oForm.updateRow()
+        On Error GoTo 0 
+    End If
+    
+    bZezwolNaZapis = False
+    
+    iPracID = oForm.getInt(oForm.findColumn("id_pracownika"))
+    iOkresID = oForm.getInt(oForm.findColumn("id_okresu"))
+    
+    oConn = oForm.ActiveConnection
+    oStmt = oConn.createStatement()
+    
+    ' Aktualizujemy wyłącznie podpis Komisji Odwoławczej
+    sSQL = "UPDATE pcz_oceny.oceny_okresowe " & _
+           "SET odw_zatwierdzil_user = CURRENT_USER, " & _
+           "    odw_zatwierdzil_data = CURRENT_TIMESTAMP " & _
+           "WHERE id_pracownika = " & iPracID & " AND id_okresu = " & iOkresID
+           
+    oStmt.executeUpdate(sSQL)
+    
+    ' Zdejmujemy flagę i zamykamy kłódkę
+    bTrybWymuszonejEdycji = False 
+    oForm.AllowUpdates = False
+    oForm.reload()
+    
+    MsgBox "Decyzja Odwoławcza została zatwierdzona.", 64, "Sukces"
+    Exit Sub 
+
+BladWalidacji:
+    bZezwolNaZapis = False 
+    MsgBox "Nie można zatwierdzić. Upewnij się, że wybrałeś Decyzję i wpisałeś Uzasadnienie.", 48, "Brakujące dane"
+End Sub

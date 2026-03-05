@@ -609,3 +609,15 @@ LEFT JOIN wymogi w ON 1=1
 LEFT JOIN ocena_kier ok ON 1=1
 -- Pobieramy ocenę całkowitą (TOTAL)
 LEFT JOIN pcz_oceny.skala_ocen so_total ON so_total.id_oceny = ok.kier_id_oceny_total;
+
+CREATE OR REPLACE VIEW v_podglad_odwolanie AS
+SELECT 
+	oo.id_pracownika,
+	oo.id_okresu,
+	oo.kier_uzasadnienie_punktow,
+	oo.kier_uzasadnienie_oceny,
+	kom_uzasadnienie,
+	kom_wniosek_zatrudnienie,
+	ko.nazwa_oceny AS kom_ocena
+FROM oceny_okresowe oo
+LEFT JOIN skala_ocen ko ON oo.kom_id_oceny = ko.id_oceny;
