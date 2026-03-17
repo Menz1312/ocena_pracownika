@@ -125,8 +125,9 @@ Sub GenerujArkuszOceny
     MsgBox "Arkusz oceny został wygenerowany.", 64, "Gotowe"
 End Sub
 
-' ---------------------------------------------------------
-
+' =====================================================================
+' MAKRO: Generowanie kompletnego Załącznika nr 2 (Ocena Okresowa)
+' =====================================================================
 Sub GenerujOceneOkresowa
     Dim oStatement As Object
     Dim oResultSet As Object
@@ -134,13 +135,14 @@ Sub GenerujOceneOkresowa
     Dim sSciezkaSzablonu As String
     Dim oDoc As Object
     Dim sUrl As String
-    Dim dDataOd As Date, dDataDo As Date
-    Dim sOkres As String
     
+    ' ========================================================
+    ' PAMIĘTAJ O ZMIANIE ŚCIEŻKI DO PLIKU, JEŚLI JEST INNA!
     sSciezkaSzablonu = "/home/tomasz/Dokumenty/studia/praca_inzynierska/Szablon_Zal2_Ocena.ott"
+    ' ========================================================
     
     If Dir(sSciezkaSzablonu) = "" Then
-        MsgBox "Nie znaleziono pliku szablonu!", 16, "Błąd"
+        MsgBox "Nie znaleziono pliku szablonu! Sprawdź ścieżkę.", 16, "Błąd"
         Exit Sub
     End If
     sUrl = ConvertToURL(sSciezkaSzablonu)
@@ -154,44 +156,56 @@ Sub GenerujOceneOkresowa
     oConn = ThisDatabaseDocument.CurrentController.ActiveConnection
     oStatement = oConn.createStatement()
     
-    ' --- DANE OSOBOWE ---
-    ' Pobieramy dane z v_szczegoly_wybranego_pracownika + daty okresu z filtr_uzytkownika
+    ' SUPER-ZAPYTANIE: Wyciąga absolutnie wszystkie dane z 3 etapów oceny jednym strzałem
     sSQL = "SELECT " & _
-           "  v.nazwisko || ' ' || v.imie, " & _
-           "  v.orcid, " & _
-           "  v.data_zatrudnienia, " & _
-           "  v.nazwa_jednostki, " & _ 
-           "  v.stopien_pelny, " & _
-           "  v.nazwa_stanowiska, " & _
-           "  v.grupa_stanowisk, " & _
-           "  oo.data_od, " & _
-           "  oo.data_do " & _
-           "FROM pcz_oceny.v_szczegoly_wybranego_pracownika v " & _
-           "JOIN pcz_oceny.filtr_uzytkownika f ON v.nazwa_uzytkownika = f.nazwa_uzytkownika " & _
-           "JOIN pcz_oceny.okresy_oceny oo ON f.id_okresu = oo.id_okresu"
+           "  v.nazwisko || ' ' || v.imie AS pracownik, v.orcid, v.data_zatrudnienia, v.nazwa_wydzialu || ', ' || v.nazwa_katedry, v.stopien_pelny, v.nazwa_stanowiska, v.grupa_stanowisk, " & _
+           "  oo.data_od, oo.data_do, " & _
+           "  o.suma_pkt_pub, o.suma_pkt_dyd, o.suma_pkt_org, o.suma_pkt_br, o.suma_pkt_total, " & _
+           "  rk.nazwa_roli, op.nazwa_oceny AS oc_pub, od.nazwa_oceny AS oc_dyd, org.nazwa_oceny AS oc_org, ob.nazwa_oceny AS oc_br, ot.nazwa_oceny AS oc_tot, " & _
+           "  o.kier_uzasadnienie_punktow, o.kier_uzasadnienie_oceny, o.kier_zatwierdzil_data, " & _
+           "  okom.nazwa_oceny AS kom_oc, o.kom_uzasadnienie, o.kom_wniosek_zatrudnienie, o.kom_zatwierdzil_data, " & _
+           "  do.tresc_decyzji, o.odw_uzasadnienie, o.odw_zatwierdzil_data, " & _
+           "  v.nazwa_dyscypliny, v.wymiar_etatu " & _"FROM pcz_oceny.filtr_uzytkownika f " & _
+           "JOIN pcz_oceny.v_szczegoly_wybranego_pracownika v ON f.nazwa_uzytkownika = v.nazwa_uzytkownika " & _
+           "JOIN pcz_oceny.okresy_oceny oo ON f.id_okresu = oo.id_okresu " & _
+           "JOIN pcz_oceny.oceny_okresowe o ON f.id_pracownika = o.id_pracownika AND f.id_okresu = o.id_okresu " & _
+           "LEFT JOIN pcz_oceny.role_oceniajacych rk ON o.kier_id_roli = rk.id_roli " & _
+           "LEFT JOIN pcz_oceny.skala_ocen op ON o.kier_id_oceny_pub = op.id_oceny " & _
+           "LEFT JOIN pcz_oceny.skala_ocen od ON o.kier_id_oceny_dyd = od.id_oceny " & _
+           "LEFT JOIN pcz_oceny.skala_ocen org ON o.kier_id_oceny_org = org.id_oceny " & _
+           "LEFT JOIN pcz_oceny.skala_ocen ob ON o.kier_id_oceny_br = ob.id_oceny " & _
+           "LEFT JOIN pcz_oceny.skala_ocen ot ON o.kier_id_oceny_total = ot.id_oceny " & _
+           "LEFT JOIN pcz_oceny.skala_ocen okom ON o.kom_id_oceny = okom.id_oceny " & _
+           "LEFT JOIN pcz_oceny.decyzje_odwolawcze do ON o.odw_id_decyzji = do.id_decyzji " & _
+           "WHERE f.nazwa_uzytkownika = CURRENT_USER"
            
     oResultSet = oStatement.executeQuery(sSQL)
     
     If oResultSet.next() Then
+        
+        ' =======================================================
+        ' 1. DANE PRACOWNIKA
+        ' =======================================================
         WstawDoZakladki(oDoc, "bmkImieNazwisko", oResultSet.getString(1))
         WstawDoZakladki(oDoc, "bmkOrcid", oResultSet.getString(2))
         
-        ' Data zatrudnienia
-        Dim sDataZatrudnienia as String
+        Dim sDataZatrudnienia As String
         sDataZatrudnienia = oResultSet.getString(3)
-        If sDataZatrudnienia <> "" Then
-             WstawDoZakladki(oDoc, "bmkDataZatrudnienia", Format(CDateFromIso(sDataZatrudnienia), "DD.MM.YYYY"))
-        End If
+        If sDataZatrudnienia <> "" Then WstawDoZakladki(oDoc, "bmkDataZatrudnienia", Format(CDateFromIso(sDataZatrudnienia), "DD.MM.YYYY"))
         
-        ' Jednostka
-        WstawDoZakladki(oDoc, "bmkMiejscePracy", oResultSet.getString(4)) ' Np. Katedra X
+        WstawDoZakladki(oDoc, "bmkMiejscePracy", oResultSet.getString(4))
         WstawDoZakladki(oDoc, "bmkTytulStopien", oResultSet.getString(5))
         WstawDoZakladki(oDoc, "bmkStanowisko", oResultSet.getString(6))
         
-        Dim sGrupa as String
+        WstawDoZakladki(oDoc, "bmkDyscyplina", oResultSet.getString(31))
+        WstawDoZakladki(oDoc, "bmkEtat", oResultSet.getString(32))
+
+        ' =======================================================
+        ' 2. SKREŚLENIA: GRUPA STANOWISK
+        ' =======================================================
+        Dim sGrupa As String
         sGrupa = oResultSet.getString(7)
         
-        ' Skreślanie (Dostosuj nazwy!)
         If sGrupa = "Badawczo-dydaktyczny" Then
             PrzekreslZakladke(oDoc, "bmkOpcjaDyd")
             PrzekreslZakladke(oDoc, "bmkOpcjaBad")
@@ -203,40 +217,118 @@ Sub GenerujOceneOkresowa
             PrzekreslZakladke(oDoc, "bmkOpcjaBadDyd")
         End If
         
-        ' Okres
+        ' =======================================================
+        ' 3. OKRES OCENY
+        ' =======================================================
+        Dim dDataOd As Date, dDataDo As Date
         dDataOd = CDateFromIso(oResultSet.getString(8))
         dDataDo = CDateFromIso(oResultSet.getString(9))
-        sOkres = Format(dDataOd, "DD.MM.YYYY") & " - " & Format(dDataDo, "DD.MM.YYYY")
-        WstawDoZakladki(oDoc, "bmkOkresOceny", sOkres)
+        WstawDoZakladki(oDoc, "bmkOkresOceny", Format(dDataOd, "DD.MM.YYYY") & " - " & Format(dDataDo, "DD.MM.YYYY"))
+        
+        ' =======================================================
+        ' 4. ZAMROŻONE PUNKTY
+        ' =======================================================
+        WstawDoZakladki(oDoc, "bmkPktPub", oResultSet.getString(10))
+        WstawDoZakladki(oDoc, "bmkPktDyd", oResultSet.getString(11))
+        WstawDoZakladki(oDoc, "bmkPktOrg", oResultSet.getString(12))
+        WstawDoZakladki(oDoc, "bmkPktBR", oResultSet.getString(13))
+        WstawDoZakladki(oDoc, "bmkPktTotal", oResultSet.getString(14))
+        
+        ' =======================================================
+        ' 5. ETAP I: KIEROWNIK
+        ' =======================================================
+        Dim sRolaKierownika As String
+        sRolaKierownika = oResultSet.getString(15) ' Pobieramy rolę z bazy
+        
+        If sRolaKierownika = "Prodziekan ds. nauki" Then
+            PrzekreslZakladke(oDoc, "bmkRolaDziekan")
+            PrzekreslZakladke(oDoc, "bmkRolaKierownik")
+            
+        ElseIf sRolaKierownika = "Dziekan" Then
+            PrzekreslZakladke(oDoc, "bmkRolaProdziekan")
+            PrzekreslZakladke(oDoc, "bmkRolaKierownik")
+            
+        ElseIf sRolaKierownika = "Kierownik jednostki międzywydziałowej" Then
+            PrzekreslZakladke(oDoc, "bmkRolaProdziekan")
+            PrzekreslZakladke(oDoc, "bmkRolaDziekan")
+        End If
+        
+        WstawDoZakladki(oDoc, "bmkKierOcenaPub", oResultSet.getString(16))
+        WstawDoZakladki(oDoc, "bmkKierOcenaDyd", oResultSet.getString(17))
+        WstawDoZakladki(oDoc, "bmkKierOcenaOrg", oResultSet.getString(18))
+        WstawDoZakladki(oDoc, "bmkKierOcenaBR", oResultSet.getString(19))
+        WstawDoZakladki(oDoc, "bmkKierOcenaTotal", oResultSet.getString(20))
+        WstawDoZakladki(oDoc, "bmkKierUzasPkt", oResultSet.getString(21))
+        WstawDoZakladki(oDoc, "bmkKierUzasOceny", oResultSet.getString(22))
+        
+        If oResultSet.getString(23) <> "" Then WstawDoZakladki(oDoc, "bmkKierData", Format(CDateFromIso(Left(oResultSet.getString(23), 10)), "DD.MM.YYYY"))
+        
+        ' =======================================================
+        ' 6. ETAP II: KOMISJA
+        ' =======================================================
+        Dim sKomOcena As String
+        sKomOcena = oResultSet.getString(24) ' Pobieramy ocenę komisji z bazy
+        
+        If sKomOcena <> "" Then
+            If sKomOcena = "Negatywna" Then
+                PrzekreslZakladke(oDoc, "bmkKomOcenaPozytywna")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaWarunkowa")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaPozytywna2")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaWarunkowa2")
+                
+            ElseIf sKomOcena = "Pozytywna" Then
+                PrzekreslZakladke(oDoc, "bmkKomOcenaNegatywna")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaWarunkowa")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaNegatywna2")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaWarunkowa2")
+                
+            ElseIf sKomOcena = "Pozytywna warunkowa" Then
+                PrzekreslZakladke(oDoc, "bmkKomOcenaNegatywna")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaPozytywna")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaNegatywna2")
+                PrzekreslZakladke(oDoc, "bmkKomOcenaPozytywna2")
+            End If
+        End If
+        
+        WstawDoZakladki(oDoc, "bmkKomUzas", oResultSet.getString(25))
+        WstawDoZakladki(oDoc, "bmkKomWniosek", oResultSet.getString(26))
+        If oResultSet.getString(27) <> "" Then WstawDoZakladki(oDoc, "bmkKomData", Format(CDateFromIso(Left(oResultSet.getString(27), 10)), "DD.MM.YYYY"))
+        
+        ' =======================================================
+        ' 7. ETAP III: ODWOŁANIE
+        ' =======================================================
+        Dim sOdwDecyzja As String
+        sOdwDecyzja = oResultSet.getString(28) ' Pobieramy decyzję odwoławczą z bazy
+        
+        If sOdwDecyzja <> "" Then
+            If sOdwDecyzja = "utrzymuje w mocy negatywną ocenę Komisji ds. Oceny Nauczycieli Akademickich" Then
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja2")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja3")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja4")
+                
+            ElseIf sOdwDecyzja = "utrzymuje w mocy pozytywną warunkową ocenę Komisji ds. Oceny Nauczycieli Akademickich" Then
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja1")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja3")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja4")
+                
+            ElseIf sOdwDecyzja = "zmienia ocenę na pozytywną warunkową" Then
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja1")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja2")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja4")
+                
+            ElseIf sOdwDecyzja = "zmienia ocenę na pozytywną" Then
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja1")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja2")
+                PrzekreslZakladke(oDoc, "bmkOdwDecyzja3")
+            End If
+        End If
+        
+        WstawDoZakladki(oDoc, "bmkOdwUzas", oResultSet.getString(29))
+        If oResultSet.getString(30) <> "" Then WstawDoZakladki(oDoc, "bmkOdwData", Format(CDateFromIso(Left(oResultSet.getString(30), 10)), "DD.MM.YYYY"))
+        
     End If
     
-    ' --- PUNKTY (Z tego samego widoku v_podsumowanie_wertykalne) ---
-    sSQL = "SELECT nazwa_grupy, uzyskane FROM pcz_oceny.v_podsumowanie_wertykalne " & _
-           "WHERE nazwa_uzytkownika = CURRENT_USER"
-    oResultSet = oStatement.executeQuery(sSQL)
-    
-    Dim sNazwaG as String
-    Dim dPkt2 as Double
-    
-    While oResultSet.next()
-        sNazwaG = oResultSet.getString(1)
-        dPkt2 = oResultSet.getDouble(2)
-        
-        Select Case sNazwaG
-            Case "Działalność publikacyjna (art. i monografie)"
-                WstawDoZakladki(oDoc, "bmkPktPub", Format(dPkt2, "0.00"))
-            Case "Działalność B+R"
-                WstawDoZakladki(oDoc, "bmkPktBR", Format(dPkt2, "0.00"))
-            Case "Działalność dydaktyczna"
-                WstawDoZakladki(oDoc, "bmkPktDyd", Format(dPkt2, "0.00"))
-            Case "Działalność organizacyjna i pozostałe"
-                WstawDoZakladki(oDoc, "bmkPktOrg", Format(dPkt2, "0.00"))
-            Case "=== SUMA ŁĄCZNA ==="
-                WstawDoZakladki(oDoc, "bmkPktTotal", Format(dPkt2, "0.00"))
-        End Select
-    Wend
-    
-    MsgBox "Ocena Okresowa została wygenerowana.", 64, "Gotowe"
+    MsgBox "Dokument Oceny Okresowej został pomyślnie wygenerowany!", 64, "Sukces"
 End Sub
 
 ' ---------------------------------------------------------
@@ -246,6 +338,10 @@ End Sub
 Sub WstawDoZakladki(oDoc As Object, sNazwaZakladki As String, sTekst As String)
     Dim oBookmarks As Object
     Dim oAnchor As Object
+    
+    ' Zabezpieczenie na wypadek próby wstawienia wartości Null z bazy
+    If IsNull(sTekst) Then sTekst = "" 
+    
     oBookmarks = oDoc.Bookmarks
     If oBookmarks.hasByName(sNazwaZakladki) Then
         oAnchor = oBookmarks.getByName(sNazwaZakladki).Anchor
@@ -263,7 +359,7 @@ Sub PrzekreslZakladke(oDoc As Object, sNazwaZakladki As String)
     End If
 End Sub
 
-Function CDateFromIso(sDate as String) As Date
+Function CDateFromIso(sDate As String) As Date
     If sDate = "" Then Exit Function
     ' Zabezpieczenie na wypadek daty już sformatowanej lub pustej
     On Error Resume Next
