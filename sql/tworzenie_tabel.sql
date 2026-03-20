@@ -115,10 +115,14 @@ CREATE TABLE deklaracje (
     id_dyscypliny INT NOT NULL REFERENCES dyscypliny(id_dyscypliny),
     udzial_procentowy NUMERIC(5, 2) NOT NULL DEFAULT 100.00,
     czy_wiodaca BOOLEAN DEFAULT FALSE NOT NULL,
+	zatwierdzil_user VARCHAR(100),
+	zatwierdzil_data TIMESTAMP,
     
 	CONSTRAINT chk_udzial_procentowy CHECK (udzial_procentowy > 0 AND udzial_procentowy <= 100),
     CONSTRAINT uq_deklaracja_w_okresie UNIQUE (id_pracownika, id_okresu, id_dyscypliny)
 );
+
+
 
 CREATE TABLE aktywnosci_pracownika (
     id_aktywnosci SERIAL PRIMARY KEY,
