@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Deklaracje" script:language="StarBasic" script:moduleType="normal">&apos; =====================================================================
+&apos; MODUŁ: Deklaracje (Zarządzanie dyscyplinami przez odłączone kontrolki)
+&apos; =====================================================================
+
+&apos; 1. Wczytywanie danych (Podepnij pod SubForm_Deklaracje -&gt; Po zmianie rekordu)
+Sub Deklaracje_PoZmianieRekordu(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source
+    If oForm.ImplementationName = &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then
+        Deklaracje_WczytajDane(oForm)
+    End If
+End Sub
+
+Sub Deklaracje_WczytajDane(oForm As Object)
+    Dim oConn As Object, oStmt As Object, oRes As Object
+    Dim sSQL As String
+    Dim iPracID As Integer, iOkresID As Integer
+    Dim iCount As Integer
+    Dim sZatwierdzil As String
+    
+    &apos; Resetowanie kontrolek
+    Deklaracje_WyczyscKontrolki(oForm)
+    
+    &apos; Pobranie ID z ukrytych pól filtra
+    iPracID = oForm.getInt(oForm.findColumn(&quot;id_pracownika&quot;))
+    iOkresID = oForm.getInt(oForm.findColumn(&quot;id_okresu&quot;))
+    
+    If iPracID = 0 Or iOkresID = 0 Then Exit Sub
+    
+    oConn = oForm.ActiveConnection
+    oStmt = oConn.createStatement()
+    
+    &apos; Pobieramy deklaracje dla pracownika w danym okresie
+    sSQL = &quot;SELECT id_dyscypliny, udzial_procentowy, czy_wiodaca, zatwierdzil_user &quot; &amp; _
+           &quot;FROM pcz_oceny.deklaracje WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID &amp; &quot; ORDER BY id_deklaracji ASC&quot;
+           
+    oRes = oStmt.executeQuery(sSQL)
+    iCount = 0
+    sZatwierdzil = &quot;&quot;
+    
+    While oRes.next()
+        iCount = iCount + 1
+        sZatwierdzil = oRes.getString(4) &apos; Jeśli ktokolwiek zatwierdził, bierzemy to
+        
+        If iCount = 1 Then
+            UstawListBox(oForm.getByName(&quot;lstDysc1&quot;), CStr(oRes.getInt(1)))
+            oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue = oRes.getDouble(2)
+            If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca1&quot;).State = 1
+        ElseIf iCount = 2 Then
+            UstawListBox(oForm.getByName(&quot;lstDysc2&quot;), CStr(oRes.getInt(1)))
+            oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue = oRes.getDouble(2)
+            If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca2&quot;).State = 1
+        End If
+    Wend
+    
+    &apos; Zarządzanie stanem (Zablokowany / Odblokowany)
+    If sZatwierdzil &lt;&gt; &quot;&quot; Then
+        Deklaracje_ZablokujInterfejs(oForm, True)
+    Else
+        Deklaracje_ZablokujInterfejs(oForm, False)
+    End If
+End Sub
+
+&apos; 2. Zapisywanie Danych (Podepnij pod przycisk btnZatwierdz -&gt; Wykonaj akcję)
+Sub Deklaracje_Zapisz(oEvent As Object)
+    Dim oForm As Object, oConn As Object, oStmt As Object
+    Dim sSQL As String
+    Dim iPracID As Integer, iOkresID As Integer
+    Dim sDysc1 As String, sDysc2 As String
+    Dim dUdzial1 As Double, dUdzial2 As Double
+    Dim bWiodaca1 As Boolean, bWiodaca2 As Boolean
+    
+    oForm = oEvent.Source.Model.Parent
+    
+    &apos; Tarcza Anty-Fokusowa
+    On Error Resume Next
+    ThisComponent.CurrentController.getControl(oEvent.Source.Model).setFocus()
+    On Error GoTo 0
+    
+    &apos; Pobieramy wartości z kontrolek
+    sDysc1 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc1&quot;))
+    sDysc2 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc2&quot;))
+    dUdzial1 = oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue
+    dUdzial2 = oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue
+    bWiodaca1 = (oForm.getByName(&quot;optWiodaca1&quot;).State = 1)
+    bWiodaca2 = (oForm.getByName(&quot;optWiodaca2&quot;).State = 1)
+    
+    &apos; === WALIDACJE BIZNESOWE ===
+    If sDysc1 = &quot;&quot; Then
+        MsgBox &quot;Musisz wybrać przynajmniej pierwszą dyscyplinę!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    If sDysc1 = sDysc2 Then
+        MsgBox &quot;Wybrano dwukrotnie tę samą dyscyplinę!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    If dUdzial1 + dUdzial2 &lt;&gt; 100.00 Then
+        MsgBox &quot;Suma udziałów musi wynosić dokładnie 100%!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    If Not bWiodaca1 And Not bWiodaca2 Then
+        MsgBox &quot;Musisz wskazać dyscyplinę wiodącą!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    
+    iPracID = oForm.getInt(oForm.findColumn(&quot;id_pracownika&quot;))
+    iOkresID = oForm.getInt(oForm.findColumn(&quot;id_okresu&quot;))
+    
+    oConn = oForm.ActiveConnection
+    oStmt = oConn.createStatement()
+    
+    &apos; 1. Czyścimy stare deklaracje dla pracownika w okresie
+    sSQL = &quot;DELETE FROM pcz_oceny.deklaracje WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
+    oStmt.executeUpdate(sSQL)
+    
+    &apos; 2. Wstawiamy Dyscyplinę 1
+    sSQL = &quot;INSERT INTO pcz_oceny.deklaracje (id_pracownika, id_okresu, id_dyscypliny, udzial_procentowy, czy_wiodaca, zatwierdzil_user, zatwierdzil_data) &quot; &amp; _
+           &quot;VALUES (&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkresID &amp; &quot;, &quot; &amp; sDysc1 &amp; &quot;, &quot; &amp; Replace(CStr(dUdzial1), &quot;,&quot;, &quot;.&quot;) &amp; &quot;, &quot; &amp; bWiodaca1 &amp; &quot;, CURRENT_USER, CURRENT_TIMESTAMP)&quot;
+    oStmt.executeUpdate(sSQL)
+    
+    &apos; 3. Wstawiamy Dyscyplinę 2 (Jeśli istnieje)
+    If sDysc2 &lt;&gt; &quot;&quot; And dUdzial2 &gt; 0 Then
+        sSQL = &quot;INSERT INTO pcz_oceny.deklaracje (id_pracownika, id_okresu, id_dyscypliny, udzial_procentowy, czy_wiodaca, zatwierdzil_user, zatwierdzil_data) &quot; &amp; _
+               &quot;VALUES (&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkresID &amp; &quot;, &quot; &amp; sDysc2 &amp; &quot;, &quot; &amp; Replace(CStr(dUdzial2), &quot;,&quot;, &quot;.&quot;) &amp; &quot;, &quot; &amp; bWiodaca2 &amp; &quot;, CURRENT_USER, CURRENT_TIMESTAMP)&quot;
+        oStmt.executeUpdate(sSQL)
+    End If
+    
+    MsgBox &quot;Deklaracje zostały poprawnie zapisane i zatwierdzone.&quot;, 64, &quot;Sukces&quot;
+    Deklaracje_WczytajDane(oForm) &apos; Przeładuje widok i zablokuje kontrolki
+End Sub
+
+&apos; 3. Automatyczne przeliczanie procentów (Podepnij pod txtUdzial1 -&gt; Tekst zmodyfikowany)
+Sub Deklaracje_PrzeliczUdzial(oEvent As Object)
+    Dim oCtrlUdzial1 As Object, oCtrlUdzial2 As Object
+    Dim dWartosc1 As Double
+    
+    oCtrlUdzial1 = oEvent.Source.Model
+    oCtrlUdzial2 = oCtrlUdzial1.Parent.getByName(&quot;txtUdzial2&quot;)
+    
+    dWartosc1 = oCtrlUdzial1.EffectiveValue
+    If dWartosc1 &gt;= 0 And dWartosc1 &lt;= 100 Then
+        oCtrlUdzial2.EffectiveValue = 100 - dWartosc1
+    End If
+End Sub
+
+&apos; 4. Odblokowanie (Podepnij pod btnEdytuj -&gt; Wykonaj akcję)
+Sub Deklaracje_Edytuj(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    Deklaracje_ZablokujInterfejs(oForm, False)
+End Sub
+
+&apos; =====================================================================
+&apos; FUNKCJE POMOCNICZE DLA ODŁĄCZONYCH KONTROLEK
+&apos; =====================================================================
+Sub Deklaracje_WyczyscKontrolki(oForm As Object)
+    oForm.getByName(&quot;lstDysc1&quot;).SelectedItems = Array()
+    oForm.getByName(&quot;lstDysc2&quot;).SelectedItems = Array()
+    oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue = 100.00
+    oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue = 0.00
+    oForm.getByName(&quot;optWiodaca1&quot;).State = 1 &apos; Domyślnie pierwsza
+    oForm.getByName(&quot;optWiodaca2&quot;).State = 0
+End Sub
+
+Sub Deklaracje_ZablokujInterfejs(oForm As Object, bZablokuj As Boolean)
+    oForm.getByName(&quot;lstDysc1&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;lstDysc2&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;txtUdzial1&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;txtUdzial2&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;optWiodaca1&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;optWiodaca2&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;btnZatwierdz&quot;).Enabled = Not bZablokuj
+End Sub
+
+Function PobierzWartoscListBox(oListBox As Object) As String
+    If UBound(oListBox.SelectedItems) &gt;= 0 Then
+        PobierzWartoscListBox = oListBox.ValueItemList(oListBox.SelectedItems(0))
+    Else
+        PobierzWartoscListBox = &quot;&quot;
+    End If
+End Function
+
+Sub UstawListBox(oListBox As Object, sSzukanaWartosc As String)
+    Dim i As Integer
+    If sSzukanaWartosc = &quot;&quot; Then
+        oListBox.SelectedItems = Array()
+        Exit Sub
+    End If
+    For i = LBound(oListBox.ValueItemList) To UBound(oListBox.ValueItemList)
+        If oListBox.ValueItemList(i) = sSzukanaWartosc Then
+            oListBox.SelectedItems = Array(i)
+            Exit Sub
+        End If
+    Next i
+End Sub
+</script:module>
