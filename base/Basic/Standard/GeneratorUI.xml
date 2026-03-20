@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="GeneratorUI" script:language="StarBasic" script:moduleType="normal">&apos; =====================================================================
+&apos; MAKRO GENERUJĄCE UI: Tworzy struktury, kontrolki i binduje zdarzenia
+&apos; =====================================================================
+Sub ZbudujFormularzDeklaracji_Automatycznie()
+    Dim oDBDoc As Object, oFormDocs As Object, oDoc As Object
+    Dim oDrawPage As Object, oForms As Object
+    Dim oMainForm As Object, oSubForm As Object
+    Dim oModel As Object
+    
+    oDBDoc = ThisDatabaseDocument
+    oFormDocs = oDBDoc.FormDocuments
+    
+    If Not oFormDocs.hasByName(&quot;frmDeklaracjeDyscyplin&quot;) Then
+        MsgBox &quot;BŁĄD: Najpierw utwórz i zapisz w bazie pusty formularz o nazwie &apos;frmDeklaracjeDyscyplin&apos;!&quot;, 16
+        Exit Sub
+    End If
+    
+    &apos; Otwieramy formularz w Trybie Projektu (OpenDesign)
+    Dim args(0) As New com.sun.star.beans.PropertyValue
+    args(0).Name = &quot;OpenMode&quot;
+    args(0).Value = &quot;openDesign&quot;
+    oDoc = oFormDocs.loadComponentFromURL(&quot;frmDeklaracjeDyscyplin&quot;, &quot;_blank&quot;, 0, args)
+    
+    oDrawPage = oDoc.DrawPage
+    oForms = oDrawPage.Forms
+    
+    &apos; Czyścimy formularz, jeśli ktoś odpali makro 2 razy
+    While oForms.getCount() &gt; 0
+        oForms.removeByIndex(0)
+    Wend
+    
+    &apos; -----------------------------------------------------------------
+    &apos; 1. TWORZENIE LOGIKI FORMULARZY (MAIN &amp; SUB)
+    &apos; -----------------------------------------------------------------
+    oMainForm = oDoc.createInstance(&quot;com.sun.star.form.component.DataForm&quot;)
+    oMainForm.Name = &quot;MainForm&quot;
+    oMainForm.Command = &quot;pcz_oceny.filtr_uzytkownika&quot;
+    oMainForm.CommandType = 0 &apos; TABLE
+    oForms.insertByIndex(0, oMainForm)
+    
+    oSubForm = oDoc.createInstance(&quot;com.sun.star.form.component.DataForm&quot;)
+    oSubForm.Name = &quot;SubForm_Deklaracje&quot;
+    oSubForm.Command = &quot;pcz_oceny.filtr_uzytkownika&quot;
+    oSubForm.CommandType = 0
+    oSubForm.MasterFields = Array(&quot;nazwa_uzytkownika&quot;)
+    oSubForm.DetailFields = Array(&quot;nazwa_uzytkownika&quot;)
+    oMainForm.insertByIndex(oMainForm.getCount(), oSubForm)
+    
+    &apos; -----------------------------------------------------------------
+    &apos; 2. WYRYSOWANIE KONTROLEK (X, Y, Szer, Wys - w mm)
+    &apos; -----------------------------------------------------------------
+    
+    &apos; --- MAIN FORM (Filtry) ---
+    UtworzKontrolke(oDoc, oMainForm, &quot;FixedText&quot;, &quot;lblPracownik&quot;, 10, 10, 40, 6).Label = &quot;Wybierz Pracownika:&quot;
+    oModel = UtworzKontrolke(oDoc, oMainForm, &quot;ListBox&quot;, &quot;lstPracownik&quot;, 55, 10, 80, 6)
+    oModel.ListSourceType = 3 : oModel.ListSource = Array(&quot;SELECT wyswietlana_nazwa, id_pracownika FROM pcz_oceny.v_lista_pracownikow_combo&quot;)
+    oModel.DataField = &quot;id_pracownika&quot; : oModel.Dropdown = True : oModel.BoundColumn = 1
+    
+    UtworzKontrolke(oDoc, oMainForm, &quot;FixedText&quot;, &quot;lblOkres&quot;, 10, 20, 40, 6).Label = &quot;Okres oceny:&quot;
+    oModel = UtworzKontrolke(oDoc, oMainForm, &quot;ListBox&quot;, &quot;lstOkres&quot;, 55, 20, 80, 6)
+    oModel.ListSourceType = 3 : oModel.ListSource = Array(&quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;)
+    oModel.DataField = &quot;id_okresu&quot; : oModel.Dropdown = True : oModel.BoundColumn = 1
+    
+    &apos; --- SUB FORM (Dyscyplina 1) ---
+    UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblDysc1&quot;, 10, 40, 40, 6).Label = &quot;Dyscyplina 1:&quot;
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;ListBox&quot;, &quot;lstDysc1&quot;, 55, 40, 80, 6)
+    oModel.ListSourceType = 3 : oModel.ListSource = Array(&quot;SELECT nazwa_dyscypliny, id_dyscypliny FROM pcz_oceny.dyscypliny ORDER BY nazwa_dyscypliny&quot;)
+    oModel.Dropdown = True : oModel.BoundColumn = 1
+    
+    UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblUdzial1&quot;, 140, 40, 20, 6).Label = &quot;Udział %:&quot;
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;txtUdzial1&quot;, 165, 40, 20, 6)
+    oModel.ValueMin = 0 : oModel.ValueMax = 100 : oModel.DecimalAccuracy = 2 : oModel.Spin = True
+    
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;RadioButton&quot;, &quot;optWiodaca1&quot;, 190, 40, 30, 6)
+    oModel.Label = &quot;Wiodąca&quot; : oModel.RefValue = &quot;1&quot;
+    
+    &apos; --- SUB FORM (Dyscyplina 2) ---
+    UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblDysc2&quot;, 10, 50, 40, 6).Label = &quot;Dyscyplina 2:&quot;
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;ListBox&quot;, &quot;lstDysc2&quot;, 55, 50, 80, 6)
+    oModel.ListSourceType = 3 : oModel.ListSource = Array(&quot;SELECT nazwa_dyscypliny, id_dyscypliny FROM pcz_oceny.dyscypliny ORDER BY nazwa_dyscypliny&quot;)
+    oModel.Dropdown = True : oModel.BoundColumn = 1
+    
+    UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblUdzial2&quot;, 140, 50, 20, 6).Label = &quot;Udział %:&quot;
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;txtUdzial2&quot;, 165, 50, 20, 6)
+    oModel.ValueMin = 0 : oModel.ValueMax = 100 : oModel.DecimalAccuracy = 2 : oModel.Spin = True
+    
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;RadioButton&quot;, &quot;optWiodaca2&quot;, 190, 50, 30, 6)
+    oModel.Label = &quot;Wiodąca&quot; : oModel.RefValue = &quot;2&quot;
+    
+    &apos; --- PRZYCISKI ---
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;CommandButton&quot;, &quot;btnEdytuj&quot;, 55, 70, 30, 10)
+    oModel.Label = &quot;Edytuj&quot; : oModel.ButtonType = 0 &apos; Push
+    
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;CommandButton&quot;, &quot;btnZatwierdz&quot;, 90, 70, 40, 10)
+    oModel.Label = &quot;Zatwierdź Deklarację&quot; : oModel.ButtonType = 0
+    
+    &apos; -----------------------------------------------------------------
+    &apos; 3. PROGRAMOWE BINDOWANIE ZDARZEŃ (Magia)
+    &apos; -----------------------------------------------------------------
+    
+    &apos; Filtry (ItemStateChanged)
+    BindMakro_Kontrolka(oMainForm, &quot;lstPracownik&quot;, &quot;com.sun.star.awt.XItemListener&quot;, &quot;itemStateChanged&quot;, &quot;Deklaracje_ZmienFiltr&quot;)
+    BindMakro_Kontrolka(oMainForm, &quot;lstOkres&quot;, &quot;com.sun.star.awt.XItemListener&quot;, &quot;itemStateChanged&quot;, &quot;Deklaracje_ZmienFiltr&quot;)
+    
+    &apos; Przeładowanie Danych (After Record Change)
+    BindMakro_Formularz(oSubForm, &quot;com.sun.star.sdbc.XRowSetListener&quot;, &quot;cursorMoved&quot;, &quot;Deklaracje_PoZmianieRekordu&quot;)
+    
+    &apos; Przeliczanie udziałów
+    BindMakro_Kontrolka(oSubForm, &quot;txtUdzial1&quot;, &quot;com.sun.star.awt.XTextListener&quot;, &quot;textChanged&quot;, &quot;Deklaracje_PrzeliczUdzial&quot;)
+    
+    &apos; Zapis i edycja (ActionPerformed)
+    BindMakro_Kontrolka(oSubForm, &quot;btnZatwierdz&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;Deklaracje_Zapisz&quot;)
+    BindMakro_Kontrolka(oSubForm, &quot;btnEdytuj&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;Deklaracje_Edytuj&quot;)
+
+    MsgBox &quot;Formularz wygenerowany pomyślnie!&quot; &amp; Chr(13) &amp; &quot;Zapisz dokument (Ikonka Dyskietki) i wyjdź z trybu edycji.&quot;, 64, &quot;Sukces&quot;
+End Sub
+
+&apos; =====================================================================
+&apos; FUNKCJE POMOCNICZE GENERATORA
+&apos; =====================================================================
+Function UtworzKontrolke(oDoc As Object, oParentForm As Object, sService As String, sName As String, x As Integer, y As Integer, w As Integer, h As Integer) As Object
+    Dim oShape As Object, oModel As Object
+    oShape = oDoc.createInstance(&quot;com.sun.star.drawing.ControlShape&quot;)
+    
+    Dim aPos As New com.sun.star.awt.Point
+    aPos.X = x * 100 : aPos.Y = y * 100
+    oShape.Position = aPos
+    
+    Dim aSize As New com.sun.star.awt.Size
+    aSize.Width = w * 100 : aSize.Height = h * 100
+    oShape.Size = aSize
+    
+    oModel = oDoc.createInstance(&quot;com.sun.star.form.component.&quot; &amp; sService)
+    oModel.Name = sName
+    
+    &apos; Wstrzyknięcie modelu do drzewa XML formularza
+    oParentForm.insertByIndex(oParentForm.getCount(), oModel)
+    
+    &apos; Powiązanie grafiki z modelem i wrzucenie na płótno
+    oShape.Control = oModel
+    oDoc.DrawPage.add(oShape)
+    UtworzKontrolke = oModel
+End Function
+
+Sub BindMakro_Kontrolka(oContainer As Object, sName As String, sListener As String, sMethod As String, sMacro As String)
+    Dim oEvent As New com.sun.star.script.ScriptEventDescriptor
+    oEvent.ListenerType = sListener
+    oEvent.EventMethod = sMethod
+    oEvent.ScriptType = &quot;Script&quot;
+    oEvent.ScriptCode = &quot;vnd.sun.star.script:Standard.Deklaracje.&quot; &amp; sMacro &amp; &quot;?language=Basic&amp;location=document&quot;
+    
+    Dim i As Integer
+    For i = 0 To oContainer.getCount() - 1
+        If oContainer.getByIndex(i).Name = sName Then
+            oContainer.registerScriptEvent(i, oEvent)
+            Exit Sub
+        End If
+    Next i
+End Sub
+
+Sub BindMakro_Formularz(oForm As Object, sListener As String, sMethod As String, sMacro As String)
+    Dim oEvent As New com.sun.star.script.ScriptEventDescriptor
+    oEvent.ListenerType = sListener
+    oEvent.EventMethod = sMethod
+    oEvent.ScriptType = &quot;Script&quot;
+    oEvent.ScriptCode = &quot;vnd.sun.star.script:Standard.Deklaracje.&quot; &amp; sMacro &amp; &quot;?language=Basic&amp;location=document&quot;
+    
+    Dim oParent As Object
+    oParent = oForm.Parent
+    Dim i As Integer
+    For i = 0 To oParent.getCount() - 1
+        If EqualUnoObjects(oParent.getByIndex(i), oForm) Then
+            oParent.registerScriptEvent(i, oEvent)
+            Exit Sub
+        End If
+    Next i
+End Sub
+</script:module>

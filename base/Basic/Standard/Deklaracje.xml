@@ -46,11 +46,11 @@ Sub Deklaracje_WczytajDane(oForm As Object)
         
         If iCount = 1 Then
             UstawListBox(oForm.getByName(&quot;lstDysc1&quot;), CStr(oRes.getInt(1)))
-            oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue = oRes.getDouble(2)
+            oForm.getByName(&quot;txtUdzial1&quot;).Value = oRes.getDouble(2)
             If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca1&quot;).State = 1
         ElseIf iCount = 2 Then
             UstawListBox(oForm.getByName(&quot;lstDysc2&quot;), CStr(oRes.getInt(1)))
-            oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue = oRes.getDouble(2)
+            oForm.getByName(&quot;txtUdzial2&quot;).Value = oRes.getDouble(2)
             If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca2&quot;).State = 1
         End If
     Wend
@@ -82,8 +82,8 @@ Sub Deklaracje_Zapisz(oEvent As Object)
     &apos; Pobieramy wartości z kontrolek
     sDysc1 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc1&quot;))
     sDysc2 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc2&quot;))
-    dUdzial1 = oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue
-    dUdzial2 = oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue
+    dUdzial1 = oForm.getByName(&quot;txtUdzial1&quot;).Value
+    dUdzial2 = oForm.getByName(&quot;txtUdzial2&quot;).Value
     bWiodaca1 = (oForm.getByName(&quot;optWiodaca1&quot;).State = 1)
     bWiodaca2 = (oForm.getByName(&quot;optWiodaca2&quot;).State = 1)
     
@@ -131,18 +131,56 @@ Sub Deklaracje_Zapisz(oEvent As Object)
     Deklaracje_WczytajDane(oForm) &apos; Przeładuje widok i zablokuje kontrolki
 End Sub
 
-&apos; 3. Automatyczne przeliczanie procentów (Podepnij pod txtUdzial1 -&gt; Tekst zmodyfikowany)
+&apos; Zmienna globalna chroniąca przed zapętleniem (Infinite Loop)
+Global bTrwaPrzeliczanie As Boolean
+
+&apos; =====================================================================
+&apos; MAKRO: Zmiana udziału przelicza drugie naczynie połączone (Obustronnie)
+&apos; =====================================================================
 Sub Deklaracje_PrzeliczUdzial(oEvent As Object)
-    Dim oCtrlUdzial1 As Object, oCtrlUdzial2 As Object
-    Dim dWartosc1 As Double
+    &apos; Jeśli makro już pracuje (naczynia się synchronizują), przerywamy
+    If bTrwaPrzeliczanie Then Exit Sub
     
-    oCtrlUdzial1 = oEvent.Source.Model
-    oCtrlUdzial2 = oCtrlUdzial1.Parent.getByName(&quot;txtUdzial2&quot;)
+    bTrwaPrzeliczanie = True &apos; ZAKŁADAMY KŁÓDKĘ
     
-    dWartosc1 = oCtrlUdzial1.EffectiveValue
-    If dWartosc1 &gt;= 0 And dWartosc1 &lt;= 100 Then
-        oCtrlUdzial2.EffectiveValue = 100 - dWartosc1
+    On Error GoTo ZdejmijKlodke &apos; W razie błędu upewniamy się, że zdejmiemy kłódkę
+    
+    Dim oSourceCtrl As Object, oTargetCtrl As Object
+    Dim oForm As Object
+    Dim dSourceVal As Double, dTargetVal As Double
+    
+    oSourceCtrl = oEvent.Source.Model
+    oForm = oSourceCtrl.Parent
+    
+    &apos; Sprawdzamy, które naczynie jest źródłem, a które celem
+    If oSourceCtrl.Name = &quot;txtUdzial1&quot; Then
+        oTargetCtrl = oForm.getByName(&quot;txtUdzial2&quot;)
+    ElseIf oSourceCtrl.Name = &quot;txtUdzial2&quot; Then
+        oTargetCtrl = oForm.getByName(&quot;txtUdzial1&quot;)
+    Else
+        GoTo ZdejmijKlodke
     End If
+    
+    If IsEmpty(oSourceCtrl.Value) Or IsNull(oSourceCtrl.Value) Then
+        dSourceVal = 0
+    Else
+        dSourceVal = oSourceCtrl.Value
+    End If
+    
+    &apos; Twarde limity wartości
+    If dSourceVal &lt; 0 Then dSourceVal = 0
+    If dSourceVal &gt; 100 Then dSourceVal = 100
+    
+    &apos; Wyliczenie reszty do 100%
+    dTargetVal = 100.00 - dSourceVal
+    
+    &apos; Aktualizujemy drugie naczynie tylko jeśli wartość naprawdę się zmieniła
+    If Abs(oTargetCtrl.Value - dTargetVal) &gt; 0.01 Then
+        oTargetCtrl.Value = dTargetVal
+    End If
+
+ZdejmijKlodke:
+    bTrwaPrzeliczanie = False &apos; ZDEJMUJEMY KŁÓDKĘ
 End Sub
 
 &apos; 4. Odblokowanie (Podepnij pod btnEdytuj -&gt; Wykonaj akcję)
@@ -158,8 +196,8 @@ End Sub
 Sub Deklaracje_WyczyscKontrolki(oForm As Object)
     oForm.getByName(&quot;lstDysc1&quot;).SelectedItems = Array()
     oForm.getByName(&quot;lstDysc2&quot;).SelectedItems = Array()
-    oForm.getByName(&quot;txtUdzial1&quot;).EffectiveValue = 100.00
-    oForm.getByName(&quot;txtUdzial2&quot;).EffectiveValue = 0.00
+    oForm.getByName(&quot;txtUdzial1&quot;).Value = 100.00
+    oForm.getByName(&quot;txtUdzial2&quot;).Value = 0.00
     oForm.getByName(&quot;optWiodaca1&quot;).State = 1 &apos; Domyślnie pierwsza
     oForm.getByName(&quot;optWiodaca2&quot;).State = 0
 End Sub
@@ -194,5 +232,57 @@ Sub UstawListBox(oListBox As Object, sSzukanaWartosc As String)
             Exit Sub
         End If
     Next i
+End Sub
+
+&apos; =====================================================================
+&apos; MAKRO: Obsługa filtrów (Pracownik / Okres)
+&apos; =====================================================================
+Sub Deklaracje_ZmienFiltr(oEvent As Object)
+    Dim oForm As Object, oStmt As Object
+    Dim sSQL As String
+    Dim iWybraneID As Integer
+    
+    Dim oListBox As Object
+    oListBox = oEvent.Source.Model
+    If IsEmpty(oListBox.SelectedValue) Then Exit Sub
+    oForm = oListBox.Parent
+    iWybraneID = CInt(oListBox.SelectedValue)
+    
+    oStmt = oForm.ActiveConnection.createStatement()
+    
+    If oListBox.Name = &quot;lstPracownik&quot; Then
+        sSQL = &quot;INSERT INTO pcz_oceny.filtr_uzytkownika (nazwa_uzytkownika, id_pracownika) VALUES (current_user, &quot; &amp; iWybraneID &amp; &quot;) ON CONFLICT (nazwa_uzytkownika) DO UPDATE SET id_pracownika = EXCLUDED.id_pracownika;&quot;
+    Else
+        sSQL = &quot;INSERT INTO pcz_oceny.filtr_uzytkownika (nazwa_uzytkownika, id_okresu) VALUES (current_user, &quot; &amp; iWybraneID &amp; &quot;) ON CONFLICT (nazwa_uzytkownika) DO UPDATE SET id_okresu = EXCLUDED.id_okresu;&quot;
+    End If
+    oStmt.executeUpdate(sSQL)
+    
+    oForm.reload()
+    If oForm.hasByName(&quot;SubForm_Deklaracje&quot;) Then
+        oForm.getByName(&quot;SubForm_Deklaracje&quot;).reload()
+    End If
+End Sub
+
+&apos; =====================================================================
+&apos; MAKRO: Obsługa przycisków opcji (Wzajemne wykluczanie się)
+&apos; =====================================================================
+Sub Deklaracje_ZmienWiodaca(oEvent As Object)
+    Dim oOpt As Object, oForm As Object
+    
+    oOpt = oEvent.Source.Model
+    oForm = oOpt.Parent
+    
+    &apos; Reagujemy tylko, gdy użytkownik ZAZNACZA daną opcję
+    If oOpt.State = 1 Then
+        If oOpt.Name = &quot;optWiodaca1&quot; Then
+            If oForm.hasByName(&quot;optWiodaca2&quot;) Then
+                oForm.getByName(&quot;optWiodaca2&quot;).State = 0
+            End If
+        ElseIf oOpt.Name = &quot;optWiodaca2&quot; Then
+            If oForm.hasByName(&quot;optWiodaca1&quot;) Then
+                oForm.getByName(&quot;optWiodaca1&quot;).State = 0
+            End If
+        End If
+    End If
 End Sub
 </script:module>

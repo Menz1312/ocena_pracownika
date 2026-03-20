@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE library:library PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "library.dtd">
 <library:library xmlns:library="http://openoffice.org/2000/library" library:name="Standard" library:readonly="false" library:passwordprotected="false">
+ <library:element library:name="GeneratorUI"/>
  <library:element library:name="Deklaracje"/>
  <library:element library:name="ProcesOceny"/>
  <library:element library:name="EdytorAktywnosci"/>
