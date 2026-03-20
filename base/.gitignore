@@ -1,0 +1,4 @@
+# Ignoruj pliki binarne bazy
+database/data
+database/log
+*.lck
