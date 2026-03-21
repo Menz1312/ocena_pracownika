@@ -3,6 +3,13 @@
  <manifest:file-entry manifest:full-path="/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.base"/>
  <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj62/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
  <manifest:file-entry manifest:full-path="forms/Obj62/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj62/styles.xml" manifest:media-type="text/xml"/>
@@ -39,13 +46,6 @@
  <manifest:file-entry manifest:full-path="forms/Obj53/manifest.rdf" manifest:media-type="application/rdf+xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj53/settings.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj53/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj51/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj33/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj33/settings.xml" manifest:media-type="text/xml"/>
