@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="AdminLogic" script:language="StarBasic" script:moduleType="normal">&apos; =====================================================================
+&apos; MODUŁ: AdminLogic (Uniwersalna logika dla Split-Forms)
+&apos; =====================================================================
+
+&apos; Blokowanie i odblokowywanie kontrolek (Grid i Detale na przemian)
+Sub Admin_UstawStan(oForm As Object, bTrybEdycji As Boolean)
+    Dim i As Integer
+    Dim oElement As Object
+    
+    For i = 0 To oForm.Count - 1
+        oElement = oForm.getByIndex(i)
+        
+        &apos; Kontrolki detali (zawsze z prefiksem det_)
+        If Left(oElement.Name, 4) = &quot;det_&quot; Then
+            oElement.Enabled = bTrybEdycji
+        End If
+        
+        &apos; Grid (w trybie edycji blokujemy nawigację, żeby użytkownik nie uciekł)
+        If oElement.Name = &quot;GridTable&quot; Then
+            oElement.Enabled = Not bTrybEdycji
+        End If
+        
+        &apos; Przyciski akcji
+        If oElement.Name = &quot;btnDodaj&quot; Or oElement.Name = &quot;btnEdytuj&quot; Or oElement.Name = &quot;btnUsun&quot; Then
+            oElement.Enabled = Not bTrybEdycji
+        End If
+        If oElement.Name = &quot;btnZapisz&quot; Or oElement.Name = &quot;btnAnuluj&quot; Then
+            oElement.Enabled = bTrybEdycji
+        End If
+    Next i
+End Sub
+
+&apos; 1. Nawigacja - gdy zmieni się rekord, blokujemy edycję
+Sub Admin_PoZmianieRekordu(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source
+    If oForm.ImplementationName = &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then
+        Admin_UstawStan(oForm, False)
+    End If
+End Sub
+
+&apos; 2. Przycisk DODAJ
+Sub Admin_Dodaj(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    oForm.moveToInsertRow()
+    Admin_UstawStan(oForm, True)
+End Sub
+
+&apos; 3. Przycisk EDYTUJ
+Sub Admin_Edytuj(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    &apos; Nie pozwalamy edytować &quot;pustki&quot;
+    If oForm.isAfterLast Or oForm.isBeforeFirst Or oForm.RowCount = 0 Then Exit Sub
+    Admin_UstawStan(oForm, True)
+End Sub
+
+&apos; 4. Przycisk ANULUJ
+Sub Admin_Anuluj(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    oForm.cancelRowUpdates()
+    If oForm.isNew Then oForm.moveToCurrentRow() &apos; Wraca do tabeli
+    Admin_UstawStan(oForm, False)
+End Sub
+
+&apos; 5. Przycisk ZAPISZ
+Sub Admin_Zapisz(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    
+    &apos; Tarcza anty-fokusowa
+    On Error Resume Next
+    ThisComponent.CurrentController.getControl(oEvent.Source.Model).setFocus()
+    On Error GoTo 0
+    
+    If oForm.isNew Then
+        oForm.insertRow()
+    Else
+        oForm.updateRow()
+    End If
+    
+    Admin_UstawStan(oForm, False)
+    oForm.reload()
+End Sub
+
+&apos; 6. Przycisk USUŃ
+Sub Admin_Usun(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source.Model.Parent
+    If oForm.isAfterLast Or oForm.isBeforeFirst Or oForm.RowCount = 0 Then Exit Sub
+    
+    If MsgBox(&quot;Czy na pewno chcesz usunąć ten rekord z bazy?&quot;, 36, &quot;Potwierdzenie usunięcia&quot;) = 6 Then
+        oForm.deleteRow()
+        oForm.reload()
+    End If
+End Sub
+
+&apos; 7. Nawigacja Panelu (Otwieranie innych formularzy)
+Sub Admin_OtworzFormularz(oEvent As Object)
+    Dim sFormName As String
+    &apos; Pobieramy nazwę formularza z ukrytego pola (Tag) przycisku
+    sFormName = oEvent.Source.Model.Tag 
+    If sFormName &lt;&gt; &quot;&quot; Then
+        ThisDatabaseDocument.FormDocuments.getByName(sFormName).open()
+    End If
+End Sub
+</script:module>
