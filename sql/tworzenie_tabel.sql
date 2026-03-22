@@ -202,6 +202,10 @@ CREATE TABLE oceny_okresowe (
     CONSTRAINT uq_raport_okresowy UNIQUE (id_pracownika, id_okresu)
 );
 
+ALTER TABLE pcz_oceny.oceny_okresowe
+DROP COLUMN odw_czy_odwolanie,
+DROP COLUMN odw_data_odwolania;
+
 --PRZETESTOWAĆ
 CREATE OR REPLACE VIEW v_aktualny_filtr AS
 SELECT 
@@ -536,6 +540,8 @@ ADD COLUMN odw_data_decyzji DATE,
 ADD COLUMN odw_uzasadnienie TEXT,
 ADD COLUMN odw_id_decyzji INT REFERENCES decyzje_odwolawcze(id_decyzji),
 ADD COLUMN odw_id_oceny INT REFERENCES skala_ocen(id_oceny);
+
+
 
 CREATE OR REPLACE VIEW pcz_oceny.v_podglad_komisji AS
 WITH 

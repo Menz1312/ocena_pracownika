@@ -182,20 +182,22 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
            &quot;  WHERE p.id_pracownika = &quot; &amp; iPracID &amp; &quot; &quot; &amp; _
            &quot;) &quot; &amp; _
            &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
+           &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET kier_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
-           &quot;    kier_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
-           &quot;    suma_pkt_pub = p.pkt_pub, &quot; &amp; _
-           &quot;    suma_pkt_dyd = p.pkt_dyd, &quot; &amp; _
-           &quot;    suma_pkt_org = p.pkt_org, &quot; &amp; _
-           &quot;    suma_pkt_br  = p.pkt_br, &quot; &amp; _
-           &quot;    suma_pkt_total = p.pkt_total, &quot; &amp; _
-           &quot;    arch_stopien = d.arch_stopien, &quot; &amp; _
-           &quot;    arch_stanowisko = d.arch_stanowisko, &quot; &amp; _
-           &quot;    arch_jednostka = d.arch_jednostka, &quot; &amp; _
-           &quot;    arch_wymiar_etatu = d.arch_wymiar_etatu, &quot; &amp; _
-           &quot;    arch_grupa_stanowisk = d.arch_grupa_stanowisk &quot; &amp; _
-           &quot;FROM punkty p, dane_arch d &quot; &amp; _
-           &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
+		    &quot;    kier_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+		    &quot;    kier_data_oceny = CURRENT_DATE, &quot; &amp; _
+		    &quot;    suma_pkt_pub = p.pkt_pub, &quot; &amp; _
+		    &quot;    suma_pkt_dyd = p.pkt_dyd, &quot; &amp; _
+		    &quot;    suma_pkt_org = p.pkt_org, &quot; &amp; _
+		    &quot;    suma_pkt_br  = p.pkt_br, &quot; &amp; _
+		    &quot;    suma_pkt_total = p.pkt_total, &quot; &amp; _
+		    &quot;    arch_stopien = d.arch_stopien, &quot; &amp; _
+		    &quot;    arch_stanowisko = d.arch_stanowisko, &quot; &amp; _
+		    &quot;    arch_jednostka = d.arch_jednostka, &quot; &amp; _
+		    &quot;    arch_wymiar_etatu = d.arch_wymiar_etatu, &quot; &amp; _
+		    &quot;    arch_grupa_stanowisk = d.arch_grupa_stanowisk &quot; &amp; _
+		    &quot;FROM punkty p, dane_arch d &quot; &amp; _
+		    &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
            
     oStmt.executeUpdate(sSQL)
     
@@ -272,9 +274,10 @@ Sub ZatwierdzOceneKomisji(oEvent As Object)
     
     &apos; === TWARDY ZAPIS DO BAZY ===
     &apos; Oprócz stempla czasu, ręcznie aktualizujemy kolumny oceny i uzasadnienia
-    sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
+	sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET kom_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
            &quot;    kom_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+           &quot;    kom_data_oceny = CURRENT_DATE, &quot; &amp; _
            &quot;    kom_id_oceny = &quot; &amp; iOcenaKomisji &amp; &quot;, &quot; &amp; _
            &quot;    kom_uzasadnienie = &apos;&quot; &amp; Replace(sUzasadnienie, &quot;&apos;&quot;, &quot;&apos;&apos;&quot;) &amp; &quot;&apos; &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
@@ -661,6 +664,7 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET odw_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
            &quot;    odw_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+           &quot;    odw_data_decyzji = CURRENT_DATE, &quot; &amp; _
            &quot;    odw_id_decyzji = &quot; &amp; iDecyzjaID &amp; &quot;, &quot; &amp; _
            &quot;    odw_id_oceny = (SELECT id_oceny FROM pcz_oceny.decyzje_odwolawcze WHERE id_decyzji = &quot; &amp; iDecyzjaID &amp; &quot;), &quot; &amp; _
            &quot;    odw_uzasadnienie = &apos;&quot; &amp; Replace(sUzasadnienie, &quot;&apos;&quot;, &quot;&apos;&apos;&quot;) &amp; &quot;&apos; &quot; &amp; _
