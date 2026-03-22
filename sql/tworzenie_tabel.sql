@@ -240,39 +240,63 @@ ORDER BY
 
 CREATE OR REPLACE VIEW pcz_oceny.v_szczegoly_wybranego_pracownika AS
 SELECT 
-    f.nazwa_uzytkownika, -- Klucz łączenia z formularzem głównym
+    f.nazwa_uzytkownika,
     p.id_pracownika,
-    
-    -- !!! TE DWIE KOLUMNY BYŁY BRAKUJĄCE !!!
     p.imie,
     p.nazwisko,
-    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    -- Reszta danych potrzebna do formularzy i raportów
     st.nazwa_stopnia AS stopien_pelny,
     s.nazwa_stanowiska,
     gs.nazwa_grupy AS grupa_stanowisk,
     jo.nazwa_jednostki AS nazwa_katedry,
-	wd.nazwa_jednostki AS nazwa_wydzialu,
+    wd.nazwa_jednostki AS nazwa_wydzialu,
     we.opis_etatu,
     p.orcid,
-    p.data_zatrudnienia
-FROM 
-    pcz_oceny.filtr_uzytkownika f
-JOIN 
-    pcz_oceny.pracownicy p ON f.id_pracownika = p.id_pracownika
-LEFT JOIN 
-    pcz_oceny.stopnie_tytuly st ON p.id_stopnia = st.id_stopnia
-LEFT JOIN 
-    pcz_oceny.stanowiska s ON p.id_stanowiska = s.id_stanowiska
-LEFT JOIN 
-    pcz_oceny.grupy_stanowisk gs ON p.id_grupy_stanowisk = gs.id_grupy_stanowisk
-LEFT JOIN 
-    pcz_oceny.jednostki_organizacyjne jo ON p.id_jednostki = jo.id_jednostki
-LEFT JOIN
-	pcz_oceny.jednostki_organizacyjne wd ON jo.id_jednostki_nadrzednej = wd.id_jednostki
-LEFT JOIN 
-    pcz_oceny.wymiar_etatu we ON p.id_etatu = we.id_etatu;
+    p.data_zatrudnienia,
+    
+    -- 1. Dyscypliny (sklejone z procentami, np. "informatyka (75%), matematyka (25%)")
+    (
+        SELECT STRING_AGG(d.nazwa_dyscypliny || ' (' || dk.udzial_procentowy || '%)', ', ')
+        FROM pcz_oceny.deklaracje dk
+        JOIN pcz_oceny.dyscypliny d ON dk.id_dyscypliny = d.id_dyscypliny
+        WHERE dk.id_pracownika = p.id_pracownika AND dk.id_okresu = f.id_okresu
+    ) AS dyscypliny_sklejone,
+    
+    -- 2. Funkcje kierownicze (Wyszukuje aktywności "Funkcja..." lub "Pełnienie funkcji...")
+    (
+        SELECT STRING_AGG(DISTINCT ta.nazwa_aktywnosci, ', ')
+        FROM pcz_oceny.aktywnosci_pracownika ap
+        JOIN pcz_oceny.typy_aktywnosci ta ON ap.id_typu_aktywnosci = ta.id_typu
+        WHERE ap.id_pracownika = p.id_pracownika 
+          AND ap.data_rozpoczecia >= (SELECT data_od FROM pcz_oceny.okresy_oceny WHERE id_okresu = f.id_okresu)
+          AND ap.data_rozpoczecia <= (SELECT data_do FROM pcz_oceny.okresy_oceny WHERE id_okresu = f.id_okresu)
+          AND (ta.nazwa_aktywnosci ILIKE 'Funkcja%' OR ta.nazwa_aktywnosci ILIKE 'Pełnienie funkcji%')
+    ) AS funkcje_kierownicze,
+    
+    -- 3. Poprzednia ocena (Szuka chronologicznie poprzedniego okresu i łączy ocenę z datą)
+    (
+        SELECT 
+            COALESCE(
+                (SELECT tresc_decyzji FROM pcz_oceny.decyzje_odwolawcze WHERE id_decyzji = o_prev.odw_id_decyzji),
+                (SELECT nazwa_oceny FROM pcz_oceny.skala_ocen WHERE id_oceny = o_prev.kom_id_oceny),
+                (SELECT nazwa_oceny FROM pcz_oceny.skala_ocen WHERE id_oceny = o_prev.kier_id_oceny_total)
+            ) || ' (' || 
+            TO_CHAR(COALESCE(o_prev.odw_zatwierdzil_data, o_prev.kom_zatwierdzil_data, o_prev.kier_zatwierdzil_data), 'DD.MM.YYYY') || ')'
+        FROM pcz_oceny.oceny_okresowe o_prev
+        JOIN pcz_oceny.okresy_oceny oo_prev ON o_prev.id_okresu = oo_prev.id_okresu
+        WHERE o_prev.id_pracownika = p.id_pracownika
+          AND oo_prev.data_od < (SELECT data_od FROM pcz_oceny.okresy_oceny WHERE id_okresu = f.id_okresu)
+        ORDER BY oo_prev.data_od DESC
+        LIMIT 1
+    ) AS poprzednia_ocena
+
+FROM pcz_oceny.filtr_uzytkownika f
+JOIN pcz_oceny.pracownicy p ON f.id_pracownika = p.id_pracownika
+LEFT JOIN pcz_oceny.stopnie_tytuly st ON p.id_stopnia = st.id_stopnia
+LEFT JOIN pcz_oceny.stanowiska s ON p.id_stanowiska = s.id_stanowiska
+LEFT JOIN pcz_oceny.grupy_stanowisk gs ON p.id_grupy_stanowisk = gs.id_grupy_stanowisk
+LEFT JOIN pcz_oceny.jednostki_organizacyjne jo ON p.id_jednostki = jo.id_jednostki
+LEFT JOIN pcz_oceny.jednostki_organizacyjne wd ON jo.id_jednostki_nadrzednej = wd.id_jednostki
+LEFT JOIN pcz_oceny.wymiar_etatu we ON p.id_etatu = we.id_etatu;
 
 CREATE OR REPLACE VIEW v_aktywnosci_wybranego_pracownika AS
 SELECT 

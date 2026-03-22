@@ -190,19 +190,18 @@ Sub ZatwierdzOceneKomisji(oEvent As Object)
     Dim iPracID As Integer
     Dim iOkresID As Integer
     Dim sKomZatwierdzil As String
+    Dim iOcenaKomisji As Integer
+    Dim sUzasadnienie As String
     
     oForm = oEvent.Source.Model.Parent
     
-    &apos; =================================================================
-    &apos; TARCZA ANTY-FOKUSOWA: Wymuszamy zrzut danych z ekranu do pamięci
-    &apos; =================================================================
+    &apos; TARCZA ANTY-FOKUSOWA
     On Error Resume Next
     Dim oCtrl As Object
     oCtrl = ThisComponent.CurrentController.getControl(oEvent.Source.Model)
     oCtrl.setFocus()
     On Error GoTo 0
     
-    &apos; Sprawdzamy, czy w bazie jest już podpis KOMISJI
     sKomZatwierdzil = oForm.getString(oForm.findColumn(&quot;kom_zatwierdzil_user&quot;))
     
     If sKomZatwierdzil &lt;&gt; &quot;&quot; And bTrybWymuszonejEdycji = False Then
@@ -212,6 +211,16 @@ Sub ZatwierdzOceneKomisji(oEvent As Object)
     
     bZezwolNaZapis = True
     oForm.AllowUpdates = True 
+    
+    &apos; === PANCERNA WALIDACJA ===
+    &apos; Pobieramy wartości bezpośrednio z bufora formularza
+    iOcenaKomisji = oForm.getInt(oForm.findColumn(&quot;kom_id_oceny&quot;))
+    sUzasadnienie = oForm.getString(oForm.findColumn(&quot;kom_uzasadnienie&quot;))
+    
+    &apos; Jeśli nie wybrano oceny (0) lub nie ma uzasadnienia - przerywamy
+    If iOcenaKomisji = 0 Or Trim(sUzasadnienie) = &quot;&quot; Then
+        GoTo BladWalidacji
+    End If
     
     If oForm.isModified Then
         On Error GoTo BladWalidacji
@@ -227,25 +236,27 @@ Sub ZatwierdzOceneKomisji(oEvent As Object)
     oConn = oForm.ActiveConnection
     oStmt = oConn.createStatement()
     
-    &apos; Aktualizujemy wyłącznie podpis Komisji (punkty zostały już zamrożone przez kierownika)
+    &apos; === TWARDY ZAPIS DO BAZY ===
+    &apos; Oprócz stempla czasu, ręcznie aktualizujemy kolumny oceny i uzasadnienia
     sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET kom_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
-           &quot;    kom_zatwierdzil_data = CURRENT_TIMESTAMP &quot; &amp; _
+           &quot;    kom_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+           &quot;    kom_id_oceny = &quot; &amp; iOcenaKomisji &amp; &quot;, &quot; &amp; _
+           &quot;    kom_uzasadnienie = &apos;&quot; &amp; Replace(sUzasadnienie, &quot;&apos;&quot;, &quot;&apos;&apos;&quot;) &amp; &quot;&apos; &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
            
     oStmt.executeUpdate(sSQL)
     
-    &apos; Zdejmujemy flagę i zamykamy kłódkę
     bTrybWymuszonejEdycji = False 
     oForm.AllowUpdates = False
     oForm.reload()
     
-    MsgBox &quot;Ocena Komisji została zatwierdzona.&quot;, 64, &quot;Sukces&quot;
+    MsgBox &quot;Ocena Komisji została zatwierdzona i zapisana.&quot;, 64, &quot;Sukces&quot;
     Exit Sub 
 
 BladWalidacji:
     bZezwolNaZapis = False 
-    MsgBox &quot;Nie można zatwierdzić. Upewnij się, że wypełniłeś wymaganą Ocenę oraz Uzasadnienie.&quot;, 48, &quot;Brakujące dane&quot;
+    MsgBox &quot;Nie można zatwierdzić. Upewnij się, że wybrałeś Ocenę z listy oraz wpisałeś Uzasadnienie.&quot;, 48, &quot;Brakujące dane&quot;
 End Sub
 
 &apos; =====================================================================
@@ -393,12 +404,6 @@ Sub Ocena_ZmienFiltrOkresu(oEvent As Object)
     oForm.reload()
 End Sub
 
-&apos; =====================================================================
-&apos; MAKRO Odwolawcza_ZmienFiltrPracownika: Zmiana Pracownika
-&apos; =====================================================================
-&apos; =====================================================================
-&apos; MAKRO Odwolawcza_ZmienFiltrPracownika: Zmiana Pracownika
-&apos; =====================================================================
 &apos; =====================================================================
 &apos; MAKRO Odwolawcza_ZmienFiltrPracownika: Zmiana Pracownika (BEZ LAGÓW)
 &apos; =====================================================================
@@ -568,20 +573,21 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     Dim sSQL As String
     Dim iPracID As Integer
     Dim iOkresID As Integer
-    Dim sOdwZatwierdzil As String &apos; &lt;--- POPRAWKA 1: Prawidłowa nazwa zmiennej
+    Dim sOdwZatwierdzil As String
+    Dim iDecyzjaID As Integer
+    Dim iOcenaID As Integer
+    Dim sUzasadnienie As String
+    Dim sOcenaSQL As String
     
     oForm = oEvent.Source.Model.Parent
     
-    &apos; =================================================================
-    &apos; TARCZA ANTY-FOKUSOWA: Wymuszamy zrzut danych z ekranu do pamięci
-    &apos; =================================================================
+    &apos; TARCZA ANTY-FOKUSOWA
     On Error Resume Next
     Dim oCtrl As Object
     oCtrl = ThisComponent.CurrentController.getControl(oEvent.Source.Model)
     oCtrl.setFocus()
     On Error GoTo 0
     
-    &apos; Sprawdzamy, czy w bazie jest już podpis KOMISJI ODWOŁAWCZEJ
     sOdwZatwierdzil = oForm.getString(oForm.findColumn(&quot;odw_zatwierdzil_user&quot;))
     
     If sOdwZatwierdzil &lt;&gt; &quot;&quot; And bTrybWymuszonejEdycji = False Then
@@ -592,13 +598,21 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     bZezwolNaZapis = True
     oForm.AllowUpdates = True 
     
-    &apos; POPRAWKA 2: Pancerne wymuszenie zapisu (tak jak w poprzednim formularzu)
+    &apos; === PANCERNA WALIDACJA (Pobieramy Decyzję ORAZ Ocenę) ===
+    iDecyzjaID = oForm.getInt(oForm.findColumn(&quot;odw_id_decyzji&quot;))
+    iOcenaID = oForm.getInt(oForm.findColumn(&quot;odw_id_oceny&quot;))
+    sUzasadnienie = oForm.getString(oForm.findColumn(&quot;odw_uzasadnienie&quot;))
+    
+    &apos; Sprawdzamy czy wybrano przynajmniej Decyzję z ListBoxa oraz czy jest uzasadnienie
+    If iDecyzjaID = 0 Or Trim(sUzasadnienie) = &quot;&quot; Then
+        GoTo BladWalidacji
+    End If
+    
     If oForm.isModified Then
         On Error GoTo BladWalidacji
         oForm.updateRow()
         On Error GoTo 0 
     Else
-        &apos; Jeśli Base nie wykrył zmian mimo zmiany fokusu, wymuszamy zapis!
         On Error GoTo BladWalidacji
         oForm.updateRow()
         On Error GoTo 0 
@@ -612,24 +626,33 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     oConn = oForm.ActiveConnection
     oStmt = oConn.createStatement()
     
-    &apos; Aktualizujemy wyłącznie podpis Komisji Odwoławczej
+    &apos; Formatujemy zapis dla oceny (jeśli nie wybrano, to wbijamy NULL, żeby baza nie krzyczała)
+    If iOcenaID &gt; 0 Then
+        sOcenaSQL = CStr(iOcenaID)
+    Else
+        sOcenaSQL = &quot;NULL&quot;
+    End If
+    
+    &apos; === TWARDY ZAPIS DO BAZY (Wbijamy Decyzję ORAZ Ocenę) ===
     sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET odw_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
-           &quot;    odw_zatwierdzil_data = CURRENT_TIMESTAMP &quot; &amp; _
+           &quot;    odw_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+           &quot;    odw_id_decyzji = &quot; &amp; iDecyzjaID &amp; &quot;, &quot; &amp; _
+           &quot;    odw_id_oceny = &quot; &amp; sOcenaSQL &amp; &quot;, &quot; &amp; _
+           &quot;    odw_uzasadnienie = &apos;&quot; &amp; Replace(sUzasadnienie, &quot;&apos;&quot;, &quot;&apos;&apos;&quot;) &amp; &quot;&apos; &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
            
     oStmt.executeUpdate(sSQL)
     
-    &apos; Zdejmujemy flagę i zamykamy kłódkę
     bTrybWymuszonejEdycji = False 
     oForm.AllowUpdates = False
     oForm.reload()
     
-    MsgBox &quot;Decyzja Odwoławcza została zatwierdzona.&quot;, 64, &quot;Sukces&quot;
+    MsgBox &quot;Decyzja Odwoławcza została zatwierdzona i zapisana.&quot;, 64, &quot;Sukces&quot;
     Exit Sub 
 
 BladWalidacji:
     bZezwolNaZapis = False 
-    MsgBox &quot;Nie można zatwierdzić. Upewnij się, że wybrałeś Decyzję i wpisałeś Uzasadnienie.&quot;, 48, &quot;Brakujące dane&quot;
+    MsgBox &quot;Nie można zatwierdzić. Upewnij się, że z listy rozwijanej wybrałeś &apos;Decyzję&apos; i wpisałeś &apos;Uzasadnienie&apos;.&quot;, 48, &quot;Brakujące dane&quot;
 End Sub
 </script:module>

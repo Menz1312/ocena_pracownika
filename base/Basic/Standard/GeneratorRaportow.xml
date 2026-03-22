@@ -158,27 +158,25 @@ Sub GenerujOceneOkresowa
     oConn = ThisDatabaseDocument.CurrentController.ActiveConnection
     oStatement = oConn.createStatement()
     
-    &apos; SUPER-ZAPYTANIE: Wyciąga absolutnie wszystkie dane z 3 etapów oceny jednym strzałem
+    &apos; SUPER-ZAPYTANIE: Odchudzone! Pobieramy numeryczne ID zamiast tekstów dla ról i decyzji
     sSQL = &quot;SELECT &quot; &amp; _
            &quot;  v.nazwisko || &apos; &apos; || v.imie AS pracownik, v.orcid, v.data_zatrudnienia, v.nazwa_wydzialu || &apos;, &apos; || v.nazwa_katedry, v.stopien_pelny, v.nazwa_stanowiska, v.grupa_stanowisk, &quot; &amp; _
            &quot;  oo.data_od, oo.data_do, &quot; &amp; _
            &quot;  o.suma_pkt_pub, o.suma_pkt_dyd, o.suma_pkt_org, o.suma_pkt_br, o.suma_pkt_total, &quot; &amp; _
-           &quot;  rk.nazwa_roli, op.nazwa_oceny AS oc_pub, od.nazwa_oceny AS oc_dyd, org.nazwa_oceny AS oc_org, ob.nazwa_oceny AS oc_br, ot.nazwa_oceny AS oc_tot, &quot; &amp; _
+           &quot;  o.kier_id_roli, op.nazwa_oceny AS oc_pub, od.nazwa_oceny AS oc_dyd, org.nazwa_oceny AS oc_org, ob.nazwa_oceny AS oc_br, ot.nazwa_oceny AS oc_tot, &quot; &amp; _
            &quot;  o.kier_uzasadnienie_punktow, o.kier_uzasadnienie_oceny, o.kier_zatwierdzil_data, &quot; &amp; _
-           &quot;  okom.nazwa_oceny AS kom_oc, o.kom_uzasadnienie, o.kom_wniosek_zatrudnienie, o.kom_zatwierdzil_data, &quot; &amp; _
-           &quot;  do.tresc_decyzji, o.odw_uzasadnienie, o.odw_zatwierdzil_data &quot; &amp; _
+           &quot;  o.kom_id_oceny, o.kom_uzasadnienie, o.kom_wniosek_zatrudnienie, o.kom_zatwierdzil_data, &quot; &amp; _
+           &quot;  o.odw_id_decyzji, o.odw_uzasadnienie, o.odw_zatwierdzil_data, &quot; &amp; _
+           &quot;  v.dyscypliny_sklejone, v.opis_etatu, v.funkcje_kierownicze, v.poprzednia_ocena &quot; &amp; _
            &quot;FROM pcz_oceny.filtr_uzytkownika f &quot; &amp; _
            &quot;JOIN pcz_oceny.v_szczegoly_wybranego_pracownika v ON f.nazwa_uzytkownika = v.nazwa_uzytkownika &quot; &amp; _
            &quot;JOIN pcz_oceny.okresy_oceny oo ON f.id_okresu = oo.id_okresu &quot; &amp; _
            &quot;JOIN pcz_oceny.oceny_okresowe o ON f.id_pracownika = o.id_pracownika AND f.id_okresu = o.id_okresu &quot; &amp; _
-           &quot;LEFT JOIN pcz_oceny.role_oceniajacych rk ON o.kier_id_roli = rk.id_roli &quot; &amp; _
            &quot;LEFT JOIN pcz_oceny.skala_ocen op ON o.kier_id_oceny_pub = op.id_oceny &quot; &amp; _
            &quot;LEFT JOIN pcz_oceny.skala_ocen od ON o.kier_id_oceny_dyd = od.id_oceny &quot; &amp; _
            &quot;LEFT JOIN pcz_oceny.skala_ocen org ON o.kier_id_oceny_org = org.id_oceny &quot; &amp; _
            &quot;LEFT JOIN pcz_oceny.skala_ocen ob ON o.kier_id_oceny_br = ob.id_oceny &quot; &amp; _
            &quot;LEFT JOIN pcz_oceny.skala_ocen ot ON o.kier_id_oceny_total = ot.id_oceny &quot; &amp; _
-           &quot;LEFT JOIN pcz_oceny.skala_ocen okom ON o.kom_id_oceny = okom.id_oceny &quot; &amp; _
-           &quot;LEFT JOIN pcz_oceny.decyzje_odwolawcze do ON o.odw_id_decyzji = do.id_decyzji &quot; &amp; _
            &quot;WHERE f.nazwa_uzytkownika = CURRENT_USER&quot;
            
     oResultSet = oStatement.executeQuery(sSQL)
@@ -198,6 +196,17 @@ Sub GenerujOceneOkresowa
         WstawDoZakladki(oDoc, &quot;bmkMiejscePracy&quot;, oResultSet.getString(4))
         WstawDoZakladki(oDoc, &quot;bmkTytulStopien&quot;, oResultSet.getString(5))
         WstawDoZakladki(oDoc, &quot;bmkStanowisko&quot;, oResultSet.getString(6))
+        
+        WstawDoZakladki(oDoc, &quot;bmkDyscyplina&quot;, oResultSet.getString(31))
+        WstawDoZakladki(oDoc, &quot;bmkWymiarCzasu&quot;, oResultSet.getString(32))
+        
+        Dim sFunkcje As String
+        sFunkcje = oResultSet.getString(33)
+        If sFunkcje &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkFunkcje&quot;, sFunkcje) Else WstawDoZakladki(oDoc, &quot;bmkFunkcje&quot;, &quot;Nie dotyczy&quot;)
+        
+        Dim sPoprzednia As String
+        sPoprzednia = oResultSet.getString(34)
+        If sPoprzednia &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkPoprzedniaOcena&quot;, sPoprzednia) Else WstawDoZakladki(oDoc, &quot;bmkPoprzedniaOcena&quot;, &quot;Brak wcześniejszej oceny&quot;)
         
         &apos; =======================================================
         &apos; 2. SKREŚLENIA: GRUPA STANOWISK
@@ -222,7 +231,7 @@ Sub GenerujOceneOkresowa
         Dim dDataOd As Date, dDataDo As Date
         dDataOd = CDateFromIso(oResultSet.getString(8))
         dDataDo = CDateFromIso(oResultSet.getString(9))
-        WstawDoZakladki(oDoc, &quot;bmkOkresOceny&quot;, Format(dDataOd, &quot;DD.MM.YYYY&quot;) &amp; &quot; - &quot; &amp; Format(dDataDo, &quot;DD.MM.YYYY&quot;))
+        WstawDoZakladki(oDoc, &quot;bmkOkresOceny&quot;, Format(dDataOd, &quot;YYYY&quot;) &amp; &quot; - &quot; &amp; Format(dDataDo, &quot;YYYY&quot;))
         
         &apos; =======================================================
         &apos; 4. ZAMROŻONE PUNKTY
@@ -236,20 +245,20 @@ Sub GenerujOceneOkresowa
         &apos; =======================================================
         &apos; 5. ETAP I: KIEROWNIK
         &apos; =======================================================
-        Dim sRolaKierownika As String
-        sRolaKierownika = oResultSet.getString(15) &apos; Pobieramy rolę z bazy
+        Dim iRolaKierownika As Integer
+        iRolaKierownika = oResultSet.getInt(15) &apos; ID 1=Prodziekan, 2=Dziekan, 3=Kier.Jedn.M.
         
-        If sRolaKierownika = &quot;Prodziekan ds. nauki&quot; Then
-            PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
-            PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
-            
-        ElseIf sRolaKierownika = &quot;Dziekan&quot; Then
-            PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
-            PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
-            
-        ElseIf sRolaKierownika = &quot;Kierownik jednostki międzywydziałowej&quot; Then
-            PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
-            PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
+        If Not oResultSet.wasNull() And iRolaKierownika &gt; 0 Then
+            If iRolaKierownika = 1 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
+            ElseIf iRolaKierownika = 2 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
+            ElseIf iRolaKierownika = 3 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
+            End If
         End If
         
         WstawDoZakladki(oDoc, &quot;bmkKierOcenaPub&quot;, oResultSet.getString(16))
@@ -265,23 +274,23 @@ Sub GenerujOceneOkresowa
         &apos; =======================================================
         &apos; 6. ETAP II: KOMISJA
         &apos; =======================================================
-        Dim sKomOcena As String
-        sKomOcena = oResultSet.getString(24) &apos; Pobieramy ocenę komisji z bazy
+        Dim iKomOcena As Integer
+        iKomOcena = oResultSet.getInt(24) &apos; ID 1=POZYTYWNA, 2=WARUNKOWA, 3=NEGATYWNA
         
-        If sKomOcena &lt;&gt; &quot;&quot; Then
-            If sKomOcena = &quot;Negatywna&quot; Then
+        If Not oResultSet.wasNull() And iKomOcena &gt; 0 Then
+            If iKomOcena = 3 Then &apos; Negatywna
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna2&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa2&quot;)
                 
-            ElseIf sKomOcena = &quot;Pozytywna&quot; Then
+            ElseIf iKomOcena = 1 Then &apos; Pozytywna
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna2&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa2&quot;)
                 
-            ElseIf sKomOcena = &quot;Pozytywna warunkowa&quot; Then
+            ElseIf iKomOcena = 2 Then &apos; Pozytywna warunkowa
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna2&quot;)
@@ -296,26 +305,26 @@ Sub GenerujOceneOkresowa
         &apos; =======================================================
         &apos; 7. ETAP III: ODWOŁANIE
         &apos; =======================================================
-        Dim sOdwDecyzja As String
-        sOdwDecyzja = oResultSet.getString(28) &apos; Pobieramy decyzję odwoławczą z bazy
+        Dim iOdwDecyzja As Integer
+        iOdwDecyzja = oResultSet.getInt(28) &apos; ID 1-4
         
-        If sOdwDecyzja &lt;&gt; &quot;&quot; Then
-            If sOdwDecyzja = &quot;utrzymuje w mocy negatywną ocenę Komisji ds. Oceny Nauczycieli Akademickich&quot; Then
+        If Not oResultSet.wasNull() And iOdwDecyzja &gt; 0 Then
+            If iOdwDecyzja = 1 Then &apos; Utrzymuje w mocy negatywną
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
                 
-            ElseIf sOdwDecyzja = &quot;utrzymuje w mocy pozytywną warunkową ocenę Komisji ds. Oceny Nauczycieli Akademickich&quot; Then
+            ElseIf iOdwDecyzja = 2 Then &apos; Utrzymuje w mocy poz. war.
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
                 
-            ElseIf sOdwDecyzja = &quot;zmienia ocenę na pozytywną warunkową&quot; Then
+            ElseIf iOdwDecyzja = 3 Then &apos; Zmienia na poz. war.
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
                 
-            ElseIf sOdwDecyzja = &quot;zmienia ocenę na pozytywną&quot; Then
+            ElseIf iOdwDecyzja = 4 Then &apos; Zmienia na pozytywną
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
                 PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
