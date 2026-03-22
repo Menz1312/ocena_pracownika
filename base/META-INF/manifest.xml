@@ -49,10 +49,10 @@
  <manifest:file-entry manifest:full-path="forms/Obj33/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj61/content.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj61/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/manifest.rdf" manifest:media-type="application/rdf+xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj61/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/styles.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj61/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorRaportow.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Basic/Standard/EdytorAktywnosci.xml" manifest:media-type="text/xml"/>
