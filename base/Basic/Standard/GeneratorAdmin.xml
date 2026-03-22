@@ -120,14 +120,19 @@ Sub GenerujSplitForm_Konfiguracja()
     
     oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 260, 60)
     DodajKolumneGridLista(oGrid, &quot;id_okresu&quot;, &quot;Okres&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;)
-    DodajKolumneGridLista(oGrid, &quot;id_typu_aktywnosci&quot;, &quot;Typ Aktywności&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci&quot;)
+    
+    &apos; POPRAWKA: Zmiana id_typu_aktywnosci na id_typu
+    DodajKolumneGridLista(oGrid, &quot;id_typu&quot;, &quot;Typ Aktywności&quot;, &quot;id_typu&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci&quot;)
+    
     DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_domyslne&quot;, &quot;Pkt Domyślne&quot;, &quot;punkty_domyslne&quot;)
     DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_min&quot;, &quot;Pkt Min&quot;, &quot;punkty_min&quot;)
     DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_max&quot;, &quot;Pkt Max&quot;, &quot;punkty_max&quot;)
     
     WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
     WstawListe(oDoc, oForm, &quot;det_okres&quot;, &quot;Okres Oceny:&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny ORDER BY data_od DESC&quot;, 10, 95, 60, 6)
-    WstawListe(oDoc, oForm, &quot;det_typ&quot;, &quot;Aktywność:&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci ORDER BY nazwa_aktywnosci&quot;, 10, 105, 120, 6)
+    
+    &apos; POPRAWKA: Zmiana id_typu_aktywnosci na id_typu
+    WstawListe(oDoc, oForm, &quot;det_typ&quot;, &quot;Aktywność:&quot;, &quot;id_typu&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci ORDER BY nazwa_aktywnosci&quot;, 10, 105, 120, 6)
     
     WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_domyslne&quot;, &quot;Pkt domyślne:&quot;, &quot;punkty_domyslne&quot;, 160, 95, 20, 6)
     WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min&quot;, &quot;Pkt minimalne:&quot;, &quot;punkty_min&quot;, 160, 105, 20, 6)
@@ -150,16 +155,21 @@ Sub GenerujSplitForm_Progi()
     DodajKolumneGridLista(oGrid, &quot;id_okresu&quot;, &quot;Okres&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;)
     DodajKolumneGridLista(oGrid, &quot;id_stanowiska&quot;, &quot;Stanowisko&quot;, &quot;id_stanowiska&quot;, &quot;SELECT nazwa_stanowiska, id_stanowiska FROM pcz_oceny.stanowiska&quot;)
     DodajKolumneGridLista(oGrid, &quot;id_grupy_stanowisk&quot;, &quot;Grupa Stanowisk&quot;, &quot;id_grupy_stanowisk&quot;, &quot;SELECT nazwa_grupy, id_grupy_stanowisk FROM pcz_oceny.grupy_stanowisk&quot;)
-    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;wymagane_punkty_dydaktyka&quot;, &quot;Min. Dydaktyka&quot;, &quot;wymagane_punkty_dydaktyka&quot;)
-    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;wymagane_punkty_total&quot;, &quot;Min. Total&quot;, &quot;wymagane_punkty_total&quot;)
+    
+    &apos; POPRAWKA: Zmiana nazw kolumn punktowych
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;prog_punktowy_dyd&quot;, &quot;Min. Dydaktyka&quot;, &quot;prog_punktowy_dyd&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;prog_punktowy_pub&quot;, &quot;Min. Publikacje&quot;, &quot;prog_punktowy_pub&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;prog_punktowy_total&quot;, &quot;Min. Total&quot;, &quot;prog_punktowy_total&quot;)
     
     WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
     WstawListe(oDoc, oForm, &quot;det_okres&quot;, &quot;Okres:&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;, 10, 95, 60, 6)
     WstawListe(oDoc, oForm, &quot;det_stanowisko&quot;, &quot;Stanowisko:&quot;, &quot;id_stanowiska&quot;, &quot;SELECT nazwa_stanowiska, id_stanowiska FROM pcz_oceny.stanowiska&quot;, 10, 105, 80, 6)
     WstawListe(oDoc, oForm, &quot;det_grupa&quot;, &quot;Grupa Stanowisk:&quot;, &quot;id_grupy_stanowisk&quot;, &quot;SELECT nazwa_grupy, id_grupy_stanowisk FROM pcz_oceny.grupy_stanowisk&quot;, 10, 115, 80, 6)
     
-    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_dyd&quot;, &quot;Min. Dydaktyka:&quot;, &quot;wymagane_punkty_dydaktyka&quot;, 150, 95, 20, 6)
-    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_tot&quot;, &quot;Min. Całkowite:&quot;, &quot;wymagane_punkty_total&quot;, 150, 105, 20, 6)
+    &apos; POPRAWKA: Zmiana nazw kolumn punktowych
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_dyd&quot;, &quot;Min. Dydaktyka:&quot;, &quot;prog_punktowy_dyd&quot;, 150, 95, 20, 6)
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_pub&quot;, &quot;Min. Publikacje:&quot;, &quot;prog_punktowy_pub&quot;, 150, 105, 20, 6)
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_tot&quot;, &quot;Min. Całkowite:&quot;, &quot;prog_punktowy_total&quot;, 150, 115, 20, 6)
     
     PodepnijMakraZdarzen(oForm)
     oDoc.setModified(True)

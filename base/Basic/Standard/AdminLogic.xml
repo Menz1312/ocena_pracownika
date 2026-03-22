@@ -62,8 +62,23 @@ End Sub
 Sub Admin_Anuluj(oEvent As Object)
     Dim oForm As Object
     oForm = oEvent.Source.Model.Parent
-    oForm.cancelRowUpdates()
-    If oForm.isNew Then oForm.moveToCurrentRow() &apos; Wraca do tabeli
+    
+    &apos; Tarcza anty-błędowa dla kaprysów API UNO
+    On Error Resume Next
+    
+    If oForm.isNew Then
+        &apos; Jeśli byliśmy w trybie DODAWANIA, po prostu opuszczamy bufor nowej linii
+        oForm.moveToCurrentRow()
+    Else
+        &apos; Jeśli byliśmy w trybie EDYCJI, cofamy zmiany w bieżącym wierszu
+        If oForm.isModified Then
+            oForm.cancelRowUpdates()
+        End If
+    End If
+    
+    On Error GoTo 0
+    
+    &apos; Ponownie zamykamy kłódkę na detale
     Admin_UstawStan(oForm, False)
 End Sub
 
