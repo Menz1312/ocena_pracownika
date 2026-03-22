@@ -98,7 +98,8 @@ Sub OdblokujEdycje(oEvent As Object)
 End Sub
 
 &apos; =====================================================================
-&apos; MAKRO ZatwierdzOceneKierownika: Przycisk ZATWIERDŹ (Z zamrażaniem wyliczonych punktów)
+&apos; MAKRO ZatwierdzOceneKierownika: Przycisk ZATWIERDŹ 
+&apos; (Z zamrażaniem punktów oraz archiwizacją etatu i stanowiska)
 &apos; =====================================================================
 Sub ZatwierdzOceneKierownika(oEvent As Object)
     Dim oForm As Object
@@ -110,6 +111,15 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
     Dim sKierZatwierdzil As String
     
     oForm = oEvent.Source.Model.Parent
+    
+    &apos; =================================================================
+    &apos; TARCZA ANTY-FOKUSOWA: Wymuszamy zrzut danych z ekranu do pamięci
+    &apos; =================================================================
+    On Error Resume Next
+    Dim oCtrl As Object
+    oCtrl = ThisComponent.CurrentController.getControl(oEvent.Source.Model)
+    oCtrl.setFocus()
+    On Error GoTo 0
     
     &apos; 1. Sprawdzamy, czy w bazie jest już podpis kierownika
     sKierZatwierdzil = oForm.getString(oForm.findColumn(&quot;kier_zatwierdzil_user&quot;))
@@ -127,6 +137,11 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
         On Error GoTo BladWalidacji
         oForm.updateRow()
         On Error GoTo 0 
+    Else
+        &apos; Wymuszenie zapisu, nawet jeśli Base nie odnotował zmian na ekranie
+        On Error GoTo BladWalidacji
+        oForm.updateRow()
+        On Error GoTo 0
     End If
     
     bZezwolNaZapis = False
@@ -137,8 +152,7 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
     oConn = oForm.ActiveConnection
     oStmt = oConn.createStatement()
     
-    &apos; Zapytanie SQL, które najpierw liczy punkty (WITH), 
-    &apos; a potem od razu aktualizuje rekord oceny, dokonując ostatecznego &quot;zamrożenia&quot;
+    &apos; 3. Zapytanie SQL: Liczy punkty i równocześnie pobiera aktualne dane archiwizacyjne pracownika
     sSQL = &quot;WITH punkty AS ( &quot; &amp; _
            &quot;  SELECT &quot; &amp; _
            &quot;    COALESCE(SUM(CASE WHEN gd.kod_grupy = &apos;PUB&apos; THEN ap.przyznane_punkty ELSE 0 END), 0) AS pkt_pub, &quot; &amp; _
@@ -151,6 +165,21 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
            &quot;  JOIN pcz_oceny.typy_aktywnosci ta ON ap.id_typu_aktywnosci = ta.id_typu &quot; &amp; _
            &quot;  JOIN pcz_oceny.grupy_dzialan gd ON ta.id_grupy = gd.id_grupy &quot; &amp; _
            &quot;  WHERE ap.id_pracownika = &quot; &amp; iPracID &amp; &quot; AND ap.data_rozpoczecia BETWEEN oo.data_od AND oo.data_do &quot; &amp; _
+           &quot;), &quot; &amp; _
+           &quot;dane_arch AS ( &quot; &amp; _
+           &quot;  SELECT &quot; &amp; _
+           &quot;    st.nazwa_stopnia AS arch_stopien, &quot; &amp; _
+           &quot;    s.nazwa_stanowiska AS arch_stanowisko, &quot; &amp; _
+           &quot;    jo.nazwa_jednostki AS arch_jednostka, &quot; &amp; _
+           &quot;    we.opis_etatu AS arch_wymiar_etatu, &quot; &amp; _
+           &quot;    gs.nazwa_grupy AS arch_grupa_stanowisk &quot; &amp; _
+           &quot;  FROM pcz_oceny.pracownicy p &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.stopnie_tytuly st ON p.id_stopnia = st.id_stopnia &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.stanowiska s ON p.id_stanowiska = s.id_stanowiska &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.jednostki_organizacyjne jo ON p.id_jednostki = jo.id_jednostki &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.wymiar_etatu we ON p.id_etatu = we.id_etatu &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.grupy_stanowisk gs ON p.id_grupy_stanowisk = gs.id_grupy_stanowisk &quot; &amp; _
+           &quot;  WHERE p.id_pracownika = &quot; &amp; iPracID &amp; &quot; &quot; &amp; _
            &quot;) &quot; &amp; _
            &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET kier_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
@@ -159,8 +188,13 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
            &quot;    suma_pkt_dyd = p.pkt_dyd, &quot; &amp; _
            &quot;    suma_pkt_org = p.pkt_org, &quot; &amp; _
            &quot;    suma_pkt_br  = p.pkt_br, &quot; &amp; _
-           &quot;    suma_pkt_total = p.pkt_total &quot; &amp; _
-           &quot;FROM punkty p &quot; &amp; _
+           &quot;    suma_pkt_total = p.pkt_total, &quot; &amp; _
+           &quot;    arch_stopien = d.arch_stopien, &quot; &amp; _
+           &quot;    arch_stanowisko = d.arch_stanowisko, &quot; &amp; _
+           &quot;    arch_jednostka = d.arch_jednostka, &quot; &amp; _
+           &quot;    arch_wymiar_etatu = d.arch_wymiar_etatu, &quot; &amp; _
+           &quot;    arch_grupa_stanowisk = d.arch_grupa_stanowisk &quot; &amp; _
+           &quot;FROM punkty p, dane_arch d &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
            
     oStmt.executeUpdate(sSQL)
@@ -170,7 +204,7 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
     oForm.AllowUpdates = False
     oForm.reload()
     
-    MsgBox &quot;Ocena została zatwierdzona. Liczba punktów została poprawnie zamrożona na potrzeby Komisji.&quot;, 64, &quot;Sukces&quot;
+    MsgBox &quot;Ocena została zatwierdzona. Punkty oraz dane pracownika zostały zamrożone.&quot;, 64, &quot;Sukces&quot;
     
     Exit Sub 
 
@@ -575,9 +609,7 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     Dim iOkresID As Integer
     Dim sOdwZatwierdzil As String
     Dim iDecyzjaID As Integer
-    Dim iOcenaID As Integer
     Dim sUzasadnienie As String
-    Dim sOcenaSQL As String
     
     oForm = oEvent.Source.Model.Parent
     
@@ -598,12 +630,10 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     bZezwolNaZapis = True
     oForm.AllowUpdates = True 
     
-    &apos; === PANCERNA WALIDACJA (Pobieramy Decyzję ORAZ Ocenę) ===
+    &apos; === WALIDACJA === (Sprawdzamy tylko decyzję i uzasadnienie)
     iDecyzjaID = oForm.getInt(oForm.findColumn(&quot;odw_id_decyzji&quot;))
-    iOcenaID = oForm.getInt(oForm.findColumn(&quot;odw_id_oceny&quot;))
     sUzasadnienie = oForm.getString(oForm.findColumn(&quot;odw_uzasadnienie&quot;))
     
-    &apos; Sprawdzamy czy wybrano przynajmniej Decyzję z ListBoxa oraz czy jest uzasadnienie
     If iDecyzjaID = 0 Or Trim(sUzasadnienie) = &quot;&quot; Then
         GoTo BladWalidacji
     End If
@@ -626,19 +656,13 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     oConn = oForm.ActiveConnection
     oStmt = oConn.createStatement()
     
-    &apos; Formatujemy zapis dla oceny (jeśli nie wybrano, to wbijamy NULL, żeby baza nie krzyczała)
-    If iOcenaID &gt; 0 Then
-        sOcenaSQL = CStr(iOcenaID)
-    Else
-        sOcenaSQL = &quot;NULL&quot;
-    End If
-    
-    &apos; === TWARDY ZAPIS DO BAZY (Wbijamy Decyzję ORAZ Ocenę) ===
+    &apos; === INTELIGENTNY ZAPIS DO BAZY ===
+    &apos; Wstawiamy ID Decyzji, a ocenę baza dociąga sobie sama z nowo zaktualizowanego słownika!
     sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
            &quot;SET odw_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
            &quot;    odw_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
            &quot;    odw_id_decyzji = &quot; &amp; iDecyzjaID &amp; &quot;, &quot; &amp; _
-           &quot;    odw_id_oceny = &quot; &amp; sOcenaSQL &amp; &quot;, &quot; &amp; _
+           &quot;    odw_id_oceny = (SELECT id_oceny FROM pcz_oceny.decyzje_odwolawcze WHERE id_decyzji = &quot; &amp; iDecyzjaID &amp; &quot;), &quot; &amp; _
            &quot;    odw_uzasadnienie = &apos;&quot; &amp; Replace(sUzasadnienie, &quot;&apos;&quot;, &quot;&apos;&apos;&quot;) &amp; &quot;&apos; &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkresID
            
