@@ -449,6 +449,25 @@ CREATE TABLE IF NOT EXISTS decyzje_odwolawcze (
     tresc_decyzji TEXT NOT NULL UNIQUE
 );
 
+-- Dodajemy kolumnę powiązaną ze skalą ocen
+ALTER TABLE pcz_oceny.decyzje_odwolawcze 
+ADD COLUMN id_oceny INT REFERENCES pcz_oceny.skala_ocen(id_oceny);
+
+-- Aktualizujemy mapowanie (Zgodnie z ID z Twojego pliku wypelnianie_slownikow.sql)
+-- ID ocen: 1 = POZYTYWNA, 2 = WARUNKOWA, 3 = NEGATYWNA
+
+-- 1. "Utrzymuje w mocy negatywną..." -> Ocena Negatywna (3)
+UPDATE pcz_oceny.decyzje_odwolawcze SET id_oceny = 3 WHERE id_decyzji = 1;
+
+-- 2. "Utrzymuje w mocy pozytywną warunkową..." -> Ocena Warunkowa (2)
+UPDATE pcz_oceny.decyzje_odwolawcze SET id_oceny = 2 WHERE id_decyzji = 2;
+
+-- 3. "Zmienia ocenę na pozytywną warunkową" -> Ocena Warunkowa (2)
+UPDATE pcz_oceny.decyzje_odwolawcze SET id_oceny = 2 WHERE id_decyzji = 3;
+
+-- 4. "Zmienia ocenę na pozytywną" -> Ocena Pozytywna (1)
+UPDATE pcz_oceny.decyzje_odwolawcze SET id_oceny = 1 WHERE id_decyzji = 4;
+
 -- C. NOWOŚĆ: Słownik ról osoby oceniającej (do skreślania w nagłówku)
 CREATE TABLE IF NOT EXISTS role_oceniajacych (
     id_roli SERIAL PRIMARY KEY,
