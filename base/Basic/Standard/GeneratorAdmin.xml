@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
 <script:module xmlns:script="http://openoffice.org/2000/script" script:name="GeneratorAdmin" script:language="StarBasic" script:moduleType="normal">&apos; =====================================================================
-&apos; MODUŁ: GeneratorAdmin (Tworzy widoki typu Split-Form)
+&apos; MODUŁ: GeneratorAdmin (Kompletny kreator zaplecza systemu)
 &apos; =====================================================================
 
 Sub UruchomPelnyGenerator()
     GenerujPanelGlowny()
-    GenerujSplitForm_Okresy()
-    GenerujSplitForm_Pracownicy()
-    MsgBox &quot;Wszystkie 3 formularze zostały pomyślnie wygenerowane! Zapisz zmiany w bazie.&quot;, 64, &quot;Sukces&quot;
+    
+    &apos; Priorytet 1: Logika biznesowa i punktacja
+    GenerujSplitForm_TypyAktywnosci()
+    GenerujSplitForm_Konfiguracja()
+    GenerujSplitForm_Progi()
+    
+    &apos; Priorytet 2: Słowniki i struktura
+    GenerujSplitForm_Jednostki()
+    GenerujSplitForm_Dziedziny()
+    GenerujSplitForm_Dyscypliny()
+    GenerujSplitForm_Stanowiska()
+    
+    MsgBox &quot;Wszystkie formularze administracyjne zostały pomyślnie wygenerowane! Pamiętaj, by zapisać plik bazy danych.&quot;, 64, &quot;Pełen Sukces&quot;
 End Sub
 
 &apos; ---------------------------------------------------------------------
-&apos; 1. PANEL GŁÓWNY ADMINISTRATORA
+&apos; PANEL GŁÓWNY (Zaktualizowany układ na 3 kolumny)
 &apos; ---------------------------------------------------------------------
 Sub GenerujPanelGlowny()
-    Dim oDoc As Object, oMainForm As Object
+    Dim oDoc As Object, oMainForm As Object, btn As Object
     oDoc = OtworzDoEdycji(&quot;frmPanelAdministratora&quot;)
     If isNull(oDoc) Then Exit Sub
     WyczyscFormularz(oDoc)
@@ -24,92 +34,226 @@ Sub GenerujPanelGlowny()
     oMainForm.Name = &quot;MainForm&quot;
     oDoc.DrawPage.Forms.insertByIndex(0, oMainForm)
     
-    WstawTytul(oDoc, oMainForm, 10, 10, 100, 10, &quot;PANEL ADMINISTRATORA&quot;)
+    WstawTytul(oDoc, oMainForm, 10, 10, 200, 10, &quot;PANEL ADMINISTRATORA SYSTEMU&quot;)
     
-    Dim btn As Object
-    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnPrac&quot;, &quot;Zarządzanie Pracownikami&quot;, 10, 30, 80, 15)
+    &apos; Kolumna 1: Personel i Podstawy
+    WstawTytul(oDoc, oMainForm, 10, 25, 80, 8, &quot;PERSONEL I OKRESY&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnPrac&quot;, &quot;Pracownicy&quot;, 10, 35, 80, 12)
     btn.Tag = &quot;frmAdmin_Pracownicy&quot;
     PodepnijMakro(oMainForm, &quot;btnPrac&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
     
-    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnOkr&quot;, &quot;Zarządzanie Okresami Oceny&quot;, 10, 50, 80, 15)
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnOkr&quot;, &quot;Okresy Oceny&quot;, 10, 50, 80, 12)
     btn.Tag = &quot;frmAdmin_OkresyOceny&quot;
     PodepnijMakro(oMainForm, &quot;btnOkr&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
     
+    &apos; Kolumna 2: Logika Oceny
+    WstawTytul(oDoc, oMainForm, 100, 25, 80, 8, &quot;LOGIKA PUNKTACJI&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnTypy&quot;, &quot;Typy Aktywności&quot;, 100, 35, 80, 12)
+    btn.Tag = &quot;frmAdmin_TypyAktywnosci&quot;
+    PodepnijMakro(oMainForm, &quot;btnTypy&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnKonf&quot;, &quot;Konfiguracja Aktywności&quot;, 100, 50, 80, 12)
+    btn.Tag = &quot;frmAdmin_KonfiguracjaAktywnosci&quot;
+    PodepnijMakro(oMainForm, &quot;btnKonf&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnProgi&quot;, &quot;Progi Punktowe&quot;, 100, 65, 80, 12)
+    btn.Tag = &quot;frmAdmin_ProgiPunktowe&quot;
+    PodepnijMakro(oMainForm, &quot;btnProgi&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    &apos; Kolumna 3: Struktura i Słowniki
+    WstawTytul(oDoc, oMainForm, 190, 25, 80, 8, &quot;STRUKTURA UCZELNI&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnJedn&quot;, &quot;Jednostki Organizacyjne&quot;, 190, 35, 80, 12)
+    btn.Tag = &quot;frmAdmin_Jednostki&quot;
+    PodepnijMakro(oMainForm, &quot;btnJedn&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnDziedz&quot;, &quot;Dziedziny Naukowe&quot;, 190, 50, 80, 12)
+    btn.Tag = &quot;frmAdmin_Dziedziny&quot;
+    PodepnijMakro(oMainForm, &quot;btnDziedz&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnDysc&quot;, &quot;Dyscypliny&quot;, 190, 65, 80, 12)
+    btn.Tag = &quot;frmAdmin_Dyscypliny&quot;
+    PodepnijMakro(oMainForm, &quot;btnDysc&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
+    btn = WstawPrzycisk(oDoc, oMainForm, &quot;btnStan&quot;, &quot;Stanowiska&quot;, 190, 80, 80, 12)
+    btn.Tag = &quot;frmAdmin_Stanowiska&quot;
+    PodepnijMakro(oMainForm, &quot;btnStan&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;AdminLogic.Admin_OtworzFormularz&quot;)
+    
     oDoc.setModified(True)
 End Sub
 
 &apos; ---------------------------------------------------------------------
-&apos; 2. SPLIT FORM: OKRESY OCENY
+&apos; PRIORYTET 1: Logika biznesowa
 &apos; ---------------------------------------------------------------------
-Sub GenerujSplitForm_Okresy()
-    Dim oDoc As Object, oForm As Object, oGrid As Object
-    oDoc = OtworzDoEdycji(&quot;frmAdmin_OkresyOceny&quot;)
-    If isNull(oDoc) Then Exit Sub
-    WyczyscFormularz(oDoc)
-    
-    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.okresy_oceny&quot;)
-    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;ZARZĄDZANIE OKRESAMI OCENY&quot;)
-    
-    &apos; -- SEKCJ 1: GRID (Podgląd) --
-    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 150, 50)
-    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_okresu&quot;, &quot;Nazwa Okresu&quot;, &quot;nazwa_okresu&quot;)
-    DodajKolumneGrid(oGrid, &quot;DateField&quot;, &quot;data_od&quot;, &quot;Data Od&quot;, &quot;data_od&quot;)
-    DodajKolumneGrid(oGrid, &quot;DateField&quot;, &quot;data_do&quot;, &quot;Data Do&quot;, &quot;data_do&quot;)
-    
-    &apos; -- SEKCJA 2: AKCJE --
-    WstawPrzyciskiAkcji(oDoc, oForm, 10, 70)
-    
-    &apos; -- SEKCJA 3: DETALE (Edycja) --
-    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa_okresu&quot;, &quot;Nazwa:&quot;, &quot;nazwa_okresu&quot;, 10, 85, 60, 6)
-    WstawPole(oDoc, oForm, &quot;DateField&quot;, &quot;det_data_od&quot;, &quot;Data Od:&quot;, &quot;data_od&quot;, 10, 95, 40, 6)
-    WstawPole(oDoc, oForm, &quot;DateField&quot;, &quot;det_data_do&quot;, &quot;Data Do:&quot;, &quot;data_do&quot;, 10, 105, 40, 6)
-    WstawPole(oDoc, oForm, &quot;CheckBox&quot;, &quot;det_czy_aktywny&quot;, &quot;Okres Aktywny?&quot;, &quot;czy_aktywny&quot;, 10, 115, 40, 6)
-    
-    PodepnijMakraZdarzen(oForm)
-    oDoc.setModified(True)
-End Sub
 
-&apos; ---------------------------------------------------------------------
-&apos; 3. SPLIT FORM: PRACOWNICY
-&apos; ---------------------------------------------------------------------
-Sub GenerujSplitForm_Pracownicy()
+Sub GenerujSplitForm_TypyAktywnosci()
     Dim oDoc As Object, oForm As Object, oGrid As Object
-    oDoc = OtworzDoEdycji(&quot;frmAdmin_Pracownicy&quot;)
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_TypyAktywnosci&quot;)
     If isNull(oDoc) Then Exit Sub
     WyczyscFormularz(oDoc)
     
-    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.pracownicy&quot;)
-    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;ZARZĄDZANIE PRACOWNIKAMI&quot;)
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.typy_aktywnosci&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;TYPY AKTYWNOŚCI&quot;)
     
-    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 230, 60)
-    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;imie&quot;, &quot;Imię&quot;, &quot;imie&quot;)
-    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwisko&quot;, &quot;Nazwisko&quot;, &quot;nazwisko&quot;)
-    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;orcid&quot;, &quot;ORCID&quot;, &quot;orcid&quot;)
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 200, 60)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_aktywnosci&quot;, &quot;Nazwa Aktywności&quot;, &quot;nazwa_aktywnosci&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_grupy&quot;, &quot;Grupa (Kategoria)&quot;, &quot;id_grupy&quot;, &quot;SELECT kod_grupy, id_grupy FROM pcz_oceny.grupy_dzialan&quot;)
     
     WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
+    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Nazwa Aktywności:&quot;, &quot;nazwa_aktywnosci&quot;, 10, 95, 120, 6)
+    WstawListe(oDoc, oForm, &quot;det_grupa&quot;, &quot;Grupa:&quot;, &quot;id_grupy&quot;, &quot;SELECT kod_grupy, id_grupy FROM pcz_oceny.grupy_dzialan&quot;, 10, 105, 40, 6)
     
-    &apos; Detale Kolumna 1
-    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_imie&quot;, &quot;Imię:&quot;, &quot;imie&quot;, 10, 95, 50, 6)
-    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwisko&quot;, &quot;Nazwisko:&quot;, &quot;nazwisko&quot;, 10, 105, 50, 6)
-    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_orcid&quot;, &quot;ORCID:&quot;, &quot;orcid&quot;, 10, 115, 50, 6)
-    WstawPole(oDoc, oForm, &quot;DateField&quot;, &quot;det_data&quot;, &quot;Zatrudniony od:&quot;, &quot;data_zatrudnienia&quot;, 10, 125, 40, 6)
-    WstawPole(oDoc, oForm, &quot;CheckBox&quot;, &quot;det_aktywny&quot;, &quot;Pracuje (Aktywny)?&quot;, &quot;czy_aktywny&quot;, 10, 135, 40, 6)
-    
-    &apos; Detale Kolumna 2 (Słowniki)
-    WstawListe(oDoc, oForm, &quot;det_jednostka&quot;, &quot;Katedra:&quot;, &quot;id_jednostki&quot;, &quot;SELECT nazwa_jednostki, id_jednostki FROM pcz_oceny.jednostki_organizacyjne&quot;, 120, 95, 90, 6)
-    WstawListe(oDoc, oForm, &quot;det_stopien&quot;, &quot;Stopień:&quot;, &quot;id_stopnia&quot;, &quot;SELECT skrot, id_stopnia FROM pcz_oceny.stopnie_tytuly&quot;, 120, 105, 50, 6)
-    WstawListe(oDoc, oForm, &quot;det_stanowisko&quot;, &quot;Stanowisko:&quot;, &quot;id_stanowiska&quot;, &quot;SELECT nazwa_stanowiska, id_stanowiska FROM pcz_oceny.stanowiska&quot;, 120, 115, 60, 6)
-    WstawListe(oDoc, oForm, &quot;det_grupa&quot;, &quot;Grupa Stanowisk:&quot;, &quot;id_grupy_stanowisk&quot;, &quot;SELECT nazwa_grupy, id_grupy_stanowisk FROM pcz_oceny.grupy_stanowisk&quot;, 120, 125, 60, 6)
-    WstawListe(oDoc, oForm, &quot;det_etat&quot;, &quot;Etat:&quot;, &quot;id_etatu&quot;, &quot;SELECT opis_etatu, id_etatu FROM pcz_oceny.wymiar_etatu ORDER BY kolejnosc&quot;, 120, 135, 50, 6)
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
 
+Sub GenerujSplitForm_Konfiguracja()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_KonfiguracjaAktywnosci&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.konfiguracja_aktywnosci&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 150, 8, &quot;KONFIGURACJA AKTYWNOŚCI DLA OKRESÓW&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 260, 60)
+    DodajKolumneGridLista(oGrid, &quot;id_okresu&quot;, &quot;Okres&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_typu_aktywnosci&quot;, &quot;Typ Aktywności&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_domyslne&quot;, &quot;Pkt Domyślne&quot;, &quot;punkty_domyslne&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_min&quot;, &quot;Pkt Min&quot;, &quot;punkty_min&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;punkty_max&quot;, &quot;Pkt Max&quot;, &quot;punkty_max&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
+    WstawListe(oDoc, oForm, &quot;det_okres&quot;, &quot;Okres Oceny:&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny ORDER BY data_od DESC&quot;, 10, 95, 60, 6)
+    WstawListe(oDoc, oForm, &quot;det_typ&quot;, &quot;Aktywność:&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci ORDER BY nazwa_aktywnosci&quot;, 10, 105, 120, 6)
+    
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_domyslne&quot;, &quot;Pkt domyślne:&quot;, &quot;punkty_domyslne&quot;, 160, 95, 20, 6)
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min&quot;, &quot;Pkt minimalne:&quot;, &quot;punkty_min&quot;, 160, 105, 20, 6)
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_max&quot;, &quot;Pkt maksymalne:&quot;, &quot;punkty_max&quot;, 160, 115, 20, 6)
+    
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
+
+Sub GenerujSplitForm_Progi()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_ProgiPunktowe&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.konfiguracja_progi_punktowe&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 150, 8, &quot;WYMAGANE PROGI PUNKTOWE&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 260, 60)
+    DodajKolumneGridLista(oGrid, &quot;id_okresu&quot;, &quot;Okres&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_stanowiska&quot;, &quot;Stanowisko&quot;, &quot;id_stanowiska&quot;, &quot;SELECT nazwa_stanowiska, id_stanowiska FROM pcz_oceny.stanowiska&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_grupy_stanowisk&quot;, &quot;Grupa Stanowisk&quot;, &quot;id_grupy_stanowisk&quot;, &quot;SELECT nazwa_grupy, id_grupy_stanowisk FROM pcz_oceny.grupy_stanowisk&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;wymagane_punkty_dydaktyka&quot;, &quot;Min. Dydaktyka&quot;, &quot;wymagane_punkty_dydaktyka&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;wymagane_punkty_total&quot;, &quot;Min. Total&quot;, &quot;wymagane_punkty_total&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
+    WstawListe(oDoc, oForm, &quot;det_okres&quot;, &quot;Okres:&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny&quot;, 10, 95, 60, 6)
+    WstawListe(oDoc, oForm, &quot;det_stanowisko&quot;, &quot;Stanowisko:&quot;, &quot;id_stanowiska&quot;, &quot;SELECT nazwa_stanowiska, id_stanowiska FROM pcz_oceny.stanowiska&quot;, 10, 105, 80, 6)
+    WstawListe(oDoc, oForm, &quot;det_grupa&quot;, &quot;Grupa Stanowisk:&quot;, &quot;id_grupy_stanowisk&quot;, &quot;SELECT nazwa_grupy, id_grupy_stanowisk FROM pcz_oceny.grupy_stanowisk&quot;, 10, 115, 80, 6)
+    
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_dyd&quot;, &quot;Min. Dydaktyka:&quot;, &quot;wymagane_punkty_dydaktyka&quot;, 150, 95, 20, 6)
+    WstawPole(oDoc, oForm, &quot;NumericField&quot;, &quot;det_min_tot&quot;, &quot;Min. Całkowite:&quot;, &quot;wymagane_punkty_total&quot;, 150, 105, 20, 6)
+    
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
+
+&apos; ---------------------------------------------------------------------
+&apos; PRIORYTET 2: Struktura Uczelni i Słowniki
+&apos; ---------------------------------------------------------------------
+
+Sub GenerujSplitForm_Jednostki()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_Jednostki&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.jednostki_organizacyjne&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;JEDNOSTKI ORGANIZACYJNE&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 200, 60)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_jednostki&quot;, &quot;Nazwa Jednostki&quot;, &quot;nazwa_jednostki&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_jednostki_nadrzednej&quot;, &quot;Nadrzędna&quot;, &quot;id_jednostki_nadrzednej&quot;, &quot;SELECT nazwa_jednostki, id_jednostki FROM pcz_oceny.jednostki_organizacyjne&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 80)
+    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Nazwa Jednostki:&quot;, &quot;nazwa_jednostki&quot;, 10, 95, 100, 6)
+    WstawListe(oDoc, oForm, &quot;det_nadrzedna&quot;, &quot;Nadrzędna (Wydział):&quot;, &quot;id_jednostki_nadrzednej&quot;, &quot;SELECT nazwa_jednostki, id_jednostki FROM pcz_oceny.jednostki_organizacyjne&quot;, 10, 105, 100, 6)
+    
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
+
+Sub GenerujSplitForm_Dyscypliny()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_Dyscypliny&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.dyscypliny&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;DYSCYPLINY NAUKOWE&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 180, 50)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_dyscypliny&quot;, &quot;Dyscyplina&quot;, &quot;nazwa_dyscypliny&quot;)
+    DodajKolumneGridLista(oGrid, &quot;id_dziedziny&quot;, &quot;Dziedzina&quot;, &quot;id_dziedziny&quot;, &quot;SELECT nazwa_dziedziny, id_dziedziny FROM pcz_oceny.dziedziny&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 70)
+    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Dyscyplina:&quot;, &quot;nazwa_dyscypliny&quot;, 10, 85, 100, 6)
+    WstawListe(oDoc, oForm, &quot;det_dziedzina&quot;, &quot;Dziedzina:&quot;, &quot;id_dziedziny&quot;, &quot;SELECT nazwa_dziedziny, id_dziedziny FROM pcz_oceny.dziedziny&quot;, 10, 95, 100, 6)
+    
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
+
+Sub GenerujSplitForm_Dziedziny()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_Dziedziny&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.dziedziny&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;DZIEDZINY NAUKOWE&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 120, 50)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_dziedziny&quot;, &quot;Dziedzina&quot;, &quot;nazwa_dziedziny&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 70)
+    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Nazwa:&quot;, &quot;nazwa_dziedziny&quot;, 10, 85, 100, 6)
+    
+    PodepnijMakraZdarzen(oForm)
+    oDoc.setModified(True)
+End Sub
+
+Sub GenerujSplitForm_Stanowiska()
+    Dim oDoc As Object, oForm As Object, oGrid As Object
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_Stanowiska&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.stanowiska&quot;)
+    WstawTytul(oDoc, oForm, 10, 5, 100, 8, &quot;STANOWISKA&quot;)
+    
+    oGrid = WstawGrid(oDoc, oForm, &quot;GridTable&quot;, 10, 15, 120, 50)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;nazwa_stanowiska&quot;, &quot;Stanowisko&quot;, &quot;nazwa_stanowiska&quot;)
+    
+    WstawPrzyciskiAkcji(oDoc, oForm, 10, 70)
+    WstawPole(oDoc, oForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Stanowisko:&quot;, &quot;nazwa_stanowiska&quot;, 10, 85, 100, 6)
+    
     PodepnijMakraZdarzen(oForm)
     oDoc.setModified(True)
 End Sub
 
 
 &apos; =====================================================================
-&apos; SILNIK GENERATORA (Funkcje robocze) - POPRAWIONA SKŁADNIA
+&apos; SILNIK GENERATORA (Z NOWĄ FUNKCJĄ LISTBOX DLA GRIDU)
 &apos; =====================================================================
+
 Function OtworzDoEdycji(sNazwa As String) As Object
     Dim args(0) As New com.sun.star.beans.PropertyValue
     args(0).Name = &quot;OpenMode&quot; : args(0).Value = &quot;openDesign&quot;
@@ -133,7 +277,6 @@ End Function
 Function WstawGrid(oDoc, oForm, sNazwa, x, y, w, h) As Object
     Dim oGrid As Object
     oGrid = UtworzElement(oDoc, oForm, &quot;GridControl&quot;, sNazwa, x, y, w, h)
-    &apos; Usunięto oGrid.ReadOnly = True, ponieważ API tego nie obsługuje w tym miejscu
     WstawGrid = oGrid
 End Function
 
@@ -141,10 +284,19 @@ Sub DodajKolumneGrid(oGrid, sTyp, sNazwa, sEtykieta, sPole)
     Dim oCol As Object
     oCol = oGrid.createColumn(sTyp)
     oCol.Name = sNazwa : oCol.Label = sEtykieta : oCol.DataField = sPole
-    
-    &apos; ZABEZPIECZENIE: Blokujemy edycję na poziomie każdej kolumny!
     oCol.ReadOnly = True 
-    
+    oGrid.insertByIndex(oGrid.getCount(), oCol)
+End Sub
+
+&apos; === NOWA FUNKCJA ===
+Sub DodajKolumneGridLista(oGrid As Object, sNazwa As String, sEtykieta As String, sPole As String, sSQL As String)
+    Dim oCol As Object
+    oCol = oGrid.createColumn(&quot;ListBox&quot;)
+    oCol.Name = sNazwa : oCol.Label = sEtykieta : oCol.DataField = sPole
+    oCol.ListSourceType = 3 &apos; Typ: SQL
+    oCol.ListSource = Array(sSQL)
+    oCol.BoundColumn = 1
+    oCol.ReadOnly = True 
     oGrid.insertByIndex(oGrid.getCount(), oCol)
 End Sub
 
@@ -152,10 +304,9 @@ Sub WstawPole(oDoc, oForm, sTyp, sNazwa, sEtykieta, sPole, x, y, w, h)
     Dim lbl As Object
     lbl = UtworzElement(oDoc, oForm, &quot;FixedText&quot;, &quot;lbl_&quot; &amp; sNazwa, x, y, 40, h)
     lbl.Label = sEtykieta
-    
     Dim c As Object
     c = UtworzElement(oDoc, oForm, sTyp, sNazwa, x + 42, y, w, h)
-    c.DataField = sPole : c.Enabled = False &apos; Domyślnie zablokowane!
+    c.DataField = sPole : c.Enabled = False
     If sTyp = &quot;DateField&quot; Then c.Dropdown = True
 End Sub
 
@@ -163,30 +314,25 @@ Sub WstawListe(oDoc, oForm, sNazwa, sEtykieta, sPole, sSQL, x, y, w, h)
     Dim lbl As Object
     lbl = UtworzElement(oDoc, oForm, &quot;FixedText&quot;, &quot;lbl_&quot; &amp; sNazwa, x, y, 40, h)
     lbl.Label = sEtykieta
-    
     Dim c As Object
     c = UtworzElement(oDoc, oForm, &quot;ListBox&quot;, sNazwa, x + 42, y, w, h)
     c.DataField = sPole : c.ListSourceType = 3 : c.ListSource = Array(sSQL) : c.BoundColumn = 1
-    c.Dropdown = True : c.Enabled = False &apos; Domyślnie zablokowane!
+    c.Dropdown = True : c.Enabled = False
 End Sub
 
 Sub WstawPrzyciskiAkcji(oDoc, oForm, x, y)
     WstawPrzycisk(oDoc, oForm, &quot;btnDodaj&quot;, &quot;+ Dodaj&quot;, x, y, 25, 8)
     WstawPrzycisk(oDoc, oForm, &quot;btnEdytuj&quot;, &quot;Edytuj&quot;, x + 30, y, 25, 8)
     WstawPrzycisk(oDoc, oForm, &quot;btnUsun&quot;, &quot;Usuń&quot;, x + 60, y, 25, 8)
-    
     Dim btn As Object
-    btn = WstawPrzycisk(oDoc, oForm, &quot;btnZapisz&quot;, &quot;Zapisz&quot;, x + 100, y, 25, 8)
-    btn.Enabled = False
-    
-    btn = WstawPrzycisk(oDoc, oForm, &quot;btnAnuluj&quot;, &quot;Anuluj&quot;, x + 130, y, 25, 8)
-    btn.Enabled = False
+    btn = WstawPrzycisk(oDoc, oForm, &quot;btnZapisz&quot;, &quot;Zapisz&quot;, x + 100, y, 25, 8) : btn.Enabled = False
+    btn = WstawPrzycisk(oDoc, oForm, &quot;btnAnuluj&quot;, &quot;Anuluj&quot;, x + 130, y, 25, 8) : btn.Enabled = False
 End Sub
 
 Function WstawPrzycisk(oDoc, oForm, sNazwa, sText, x, y, w, h) As Object
     Dim btn As Object
     btn = UtworzElement(oDoc, oForm, &quot;CommandButton&quot;, sNazwa, x, y, w, h)
-    btn.Label = sText : btn.ButtonType = 0 &apos; Push
+    btn.Label = sText : btn.ButtonType = 0
     WstawPrzycisk = btn
 End Function
 
@@ -197,32 +343,20 @@ Sub WstawTytul(oDoc, oForm, x, y, w, h, sText)
 End Sub
 
 Function UtworzElement(oDoc As Object, oForm As Object, sTyp As String, sNazwa As String, x As Integer, y As Integer, w As Integer, h As Integer) As Object
-    Dim oShape As Object
+    Dim oShape As Object, oModel As Object
     Dim aPos As New com.sun.star.awt.Point
     Dim aSize As New com.sun.star.awt.Size
     
     oShape = oDoc.createInstance(&quot;com.sun.star.drawing.ControlShape&quot;)
-    
-    Dim oModel As Object
     oModel = oDoc.createInstance(&quot;com.sun.star.form.component.&quot; &amp; sTyp)
     oModel.Name = sNazwa
     oForm.insertByIndex(oForm.getCount(), oModel)
-    
     oShape.Control = oModel
     oDoc.DrawPage.add(oShape)
     
-    &apos; 1. KOTWICZENIE DO STRONY (zapobiega rozsypywaniu się pozycji)
     oShape.AnchorType = com.sun.star.text.TextContentAnchorType.AT_PAGE
-    
-    &apos; 2. ROZMIAR I POZYCJA (Zapis do zmiennych wymusza zmianę na obiekcie)
-    aPos.X = x * 100
-    aPos.Y = y * 100
-    oShape.Position = aPos
-    
-    aSize.Width = w * 100
-    aSize.Height = h * 100
-    oShape.Size = aSize
-    
+    aPos.X = x * 100 : aPos.Y = y * 100 : oShape.Position = aPos
+    aSize.Width = w * 100 : aSize.Height = h * 100 : oShape.Size = aSize
     UtworzElement = oModel
 End Function
 
@@ -238,7 +372,7 @@ Sub PodepnijMakraZdarzen(oForm)
     oEvent.EventMethod = &quot;cursorMoved&quot;
     oEvent.ScriptType = &quot;Script&quot;
     oEvent.ScriptCode = &quot;vnd.sun.star.script:Standard.AdminLogic.Admin_PoZmianieRekordu?language=Basic&amp;location=document&quot;
-    oForm.Parent.registerScriptEvent(0, oEvent) &apos; MainForm to indeks 0
+    oForm.Parent.registerScriptEvent(0, oEvent)
 End Sub
 
 Sub PodepnijMakro(oForm, sNazwa, sListener, sMethod, sMacro)
