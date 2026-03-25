@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="PodgladAktywnosci_v2" script:language="StarBasic" script:moduleType="normal">REM  ***** BASIC  *****
+Option Explicit
+
+&apos; ZMIENNE GLOBALNE W PAMIĘCI RAM
+Global g_WybranyPracownikID_v2 As Integer
+Global g_WybranyOkresID_v2 As Integer
+Global g_WybranaAktywnoscID_v2 As Integer
+Global g_TrybEdytora_v2 As String
+Global g_TrwaOdswiezanie_v2 As Boolean
+
+&apos; Pomocnicza funkcja otwierająca formularz
+Function OtworzFormularz(sNazwa As String) As Object
+    Dim oFormDoc As Object
+    oFormDoc = ThisDatabaseDocument.FormDocuments.getByName(sNazwa)
+    OtworzFormularz = oFormDoc.open()
+End Function
+
+&apos; Główna procedura obsługująca OBA filtry (Pracownik i Okres)
+Sub ZmienFiltry(oEvent As Object)
+    If g_TrwaOdswiezanie_v2 Then Exit Sub
+    g_TrwaOdswiezanie_v2 = True
+
+    Dim oMainForm As Object
+    Dim oListPrac As Object, oListOkr As Object
+    
+    oMainForm = oEvent.Source.Model.Parent
+    oListPrac = oMainForm.getByName(&quot;lstPracownicy&quot;)
+    oListOkr = oMainForm.getByName(&quot;lstOkresy&quot;)
+    
+    &apos; Zabezpieczenie przed pustym wyborem
+    If IsEmpty(oListPrac.SelectedValue) Or IsEmpty(oListOkr.SelectedValue) Then
+        g_TrwaOdswiezanie_v2 = False
+        Exit Sub
+    End If
+    
+    &apos; 1. ZAPIS DO PAMIĘCI RAM
+    g_WybranyPracownikID_v2 = CInt(oListPrac.SelectedValue)
+    g_WybranyOkresID_v2 = CInt(oListOkr.SelectedValue)
+    
+    Dim oConn As Object, oStmt As Object, oRes As Object
+    oConn = oMainForm.ActiveConnection
+    oStmt = oConn.createStatement()
+    
+    &apos; 2. POBRANIE DAT OKRESU BEZPOŚREDNIO Z BAZY (Omijamy problem podzapytań w Base)
+    Dim sDataOd As String, sDataDo As String
+    Dim sSQLDaty As String
+    sSQLDaty = &quot;SELECT data_od, data_do FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;okresy_oceny&quot;&quot; WHERE &quot;&quot;id_okresu&quot;&quot; = &quot; &amp; g_WybranyOkresID_v2
+    
+    oRes = oStmt.executeQuery(sSQLDaty)
+    If oRes.next() Then
+        sDataOd = oRes.getString(1) &apos; format YYYY-MM-DD
+        sDataDo = oRes.getString(2)
+    Else
+        g_TrwaOdswiezanie_v2 = False
+        Exit Sub
+    End If
+    
+    &apos; 3. ZMIANA SQL BEZPOŚREDNIO W PODFORMULARZU (Czysty SQL, który LO rozumie w 100%)
+    Dim oSubAktywnosci As Object
+    If oMainForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
+        oSubAktywnosci = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
+        
+        Dim sSQL As String
+        sSQL = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE &quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; g_WybranyPracownikID_v2 &amp; _
+               &quot; AND &quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND &quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; ORDER BY &quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
+        
+        oSubAktywnosci.CommandType = 2 &apos; 2 = SQL Command
+        oSubAktywnosci.Command = sSQL
+        oSubAktywnosci.reload()
+    End If
+    
+    If oMainForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
+        oMainForm.getByName(&quot;SubForm_Podsumowanie&quot;).reload()
+    End If
+    
+    If oMainForm.hasByName(&quot;SubForm_DaneGlowne&quot;) Then
+        oMainForm.getByName(&quot;SubForm_DaneGlowne&quot;).reload()
+    End If
+
+    g_TrwaOdswiezanie_v2 = False
+End Sub
+
+Sub OtworzDoDodania(oEvent As Object)
+    If g_WybranyPracownikID_v2 = 0 Or g_WybranyOkresID_v2 = 0 Then
+        MsgBox &quot;Najpierw wybierz pracownika i okres!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    
+    g_TrybEdytora_v2 = &quot;DODAJ&quot;
+    OtworzFormularz(&quot;frmEdytorAktywnosci_v2&quot;)
+End Sub
+
+Sub OtworzDoEdycji(oEvent As Object)
+    Dim oDashSubForm As Object
+    oDashSubForm = ThisComponent.DrawPage.Forms.GetByIndex(0).getByName(&quot;SubForm_Aktywnosci&quot;)
+    
+    If oDashSubForm.RowCount = 0 Or oDashSubForm.isBeforeFirst Or oDashSubForm.isAfterLast Then 
+        MsgBox &quot;Zaznacz wpis w tabeli!&quot;, 48, &quot;Brak wyboru&quot;
+        Exit Sub
+    End If
+    
+    g_WybranaAktywnoscID_v2 = oDashSubForm.getInt(oDashSubForm.findColumn(&quot;id_aktywnosci&quot;))
+    g_TrybEdytora_v2 = &quot;EDYTUJ&quot;
+    
+    OtworzFormularz(&quot;frmEdytorAktywnosci_v2&quot;)
+End Sub
+
+&apos; Procedura Usuwania zostaje Twoja (jest świetna i bezpośrednio uderza w bazę)
+Sub UsunAktywnosc(oEvent As Object)
+    Dim oDashSubForm As Object
+    Dim iAktywnoscID As Integer
+    Dim oStatement As Object
+    Dim sSQL As String
+    
+    oDashSubForm = ThisComponent.DrawPage.Forms.GetByIndex(0).getByName(&quot;SubForm_Aktywnosci&quot;)
+    If oDashSubForm.RowCount = 0 Then Exit Sub
+    iAktywnoscID = oDashSubForm.getInt(oDashSubForm.findColumn(&quot;id_aktywnosci&quot;))
+    
+    If MsgBox(&quot;Czy na pewno chcesz usunąć tę aktywność?&quot;, 36, &quot;Potwierdzenie&quot;) = 6 Then
+        If IsNull(oDashSubForm.ActiveConnection) Then Exit Sub
+        oStatement = oDashSubForm.ActiveConnection.createStatement()
+        sSQL = &quot;DELETE FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE &quot;&quot;id_aktywnosci&quot;&quot; = &quot; &amp; iAktywnoscID
+        On Error GoTo BladSQL
+        oStatement.executeUpdate(sSQL)
+        
+        oDashSubForm.reload()
+        If ThisComponent.DrawPage.Forms.GetByIndex(0).hasByName(&quot;SubForm_Podsumowanie&quot;) Then
+            ThisComponent.DrawPage.Forms.GetByIndex(0).getByName(&quot;SubForm_Podsumowanie&quot;).reload()
+        End If
+        Exit Sub
+BladSQL:
+        MsgBox &quot;Błąd usuwania SQL: &quot; &amp; Error, 16, &quot;Błąd&quot;
+    End If
+End Sub
+</script:module>

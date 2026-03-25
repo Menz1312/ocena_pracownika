@@ -3,35 +3,49 @@
  <manifest:file-entry manifest:full-path="/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.base"/>
  <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj51/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj33/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj111/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj171/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj171/styles.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj171/settings.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj171/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj171/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj171/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj171/styles.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj171/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
  <manifest:file-entry manifest:full-path="forms/Obj171/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj53/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj191/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj51/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj151/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj192/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj172/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj81/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj131/settings.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj131/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj131/content.xml" manifest:media-type="text/xml"/>
@@ -39,100 +53,102 @@
  <manifest:file-entry manifest:full-path="forms/Obj131/styles.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj131/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
  <manifest:file-entry manifest:full-path="forms/Obj131/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj62/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj52/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj111/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj41/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj91/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj53/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj32/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj61/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj141/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj101/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj121/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/meta.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/settings.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/styles.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/manifest.rdf" manifest:media-type="application/rdf+xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj33/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj161/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="forms/Obj161/meta.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/manifest.rdf" manifest:media-type="application/rdf+xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/styles.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
  <manifest:file-entry manifest:full-path="forms/Obj161/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj81/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj151/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj141/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj101/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj41/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj91/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj121/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj172/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj61/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj32/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj62/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/meta.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/settings.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/manifest.rdf" manifest:media-type="application/rdf+xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/styles.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/content.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="forms/Obj52/" manifest:version="1.4" manifest:media-type="application/vnd.oasis.opendocument.text"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/AdminLogic.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorAdmin.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/EdytorAktywnosci.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/ProcesOceny.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorRaportow.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/PodgladAktywnosci_v2.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Basic/Standard/Deklaracje.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Basic/Standard/script-lb.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/ProcesOceny.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/EdytorAktywnosci.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorRaportow.xml" manifest:media-type="text/xml"/>
- <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorUI.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Basic/Standard/PodgladAktywnosci.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorUI.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/GeneratorAdmin.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/AdminLogic.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="Basic/Standard/EdytorAktywnosci_v2.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Basic/script-lc.xml" manifest:media-type="text/xml"/>
  <manifest:file-entry manifest:full-path="Configurations2/" manifest:media-type="application/vnd.sun.xml.ui.configuration"/>
 </manifest:manifest>

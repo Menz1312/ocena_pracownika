@@ -394,4 +394,158 @@ Sub PodepnijMakro(oForm, sNazwa, sListener, sMethod, sMacro)
         If oForm.getByIndex(i).Name = sNazwa Then oForm.registerScriptEvent(i, oEvent) : Exit Sub
     Next i
 End Sub
+
+&apos; =====================================================================
+&apos; FUNKCJE DLA FORMULARZY TRANSAKCYJNYCH (AKTYWNE DOMYŚLNIE)
+&apos; =====================================================================
+Sub WstawListeAktywna(oDoc, oForm, sNazwa, sEtykieta, sPole, sSQL, x, y, w, h)
+    Dim lbl As Object
+    lbl = UtworzElement(oDoc, oForm, &quot;FixedText&quot;, &quot;lbl_&quot; &amp; sNazwa, x, y, 40, h)
+    lbl.Label = sEtykieta
+    Dim c As Object
+    c = UtworzElement(oDoc, oForm, &quot;ListBox&quot;, sNazwa, x + 42, y, w, h)
+    c.DataField = sPole : c.ListSourceType = 3 : c.ListSource = Array(sSQL) : c.BoundColumn = 1
+    c.Dropdown = True : c.Enabled = True &apos; ODBLOKOWANE!
+End Sub
+
+Sub WstawPoleAktywne(oDoc, oForm, sTyp, sNazwa, sEtykieta, sPole, x, y, w, h)
+    Dim lbl As Object
+    lbl = UtworzElement(oDoc, oForm, &quot;FixedText&quot;, &quot;lbl_&quot; &amp; sNazwa, x, y, 40, h)
+    lbl.Label = sEtykieta
+    Dim c As Object
+    c = UtworzElement(oDoc, oForm, sTyp, sNazwa, x + 42, y, w, h)
+    c.DataField = sPole : c.Enabled = True &apos; ODBLOKOWANE!
+    If sTyp = &quot;DateField&quot; Then c.Dropdown = True
+End Sub
+
+&apos; =====================================================================
+&apos; FUNKCJE POMOCNICZE DLA PÓL INFORMACYJNYCH (NIEPOWIĄZANYCH Z BAZĄ)
+&apos; =====================================================================
+Sub WstawPoleInformacyjne(oDoc, oForm, sNazwa, sEtykieta, x, y, w, h)
+    Dim lbl As Object
+    lbl = UtworzElement(oDoc, oForm, &quot;FixedText&quot;, &quot;lbl_&quot; &amp; sNazwa, x, y, 35, h)
+    lbl.Label = sEtykieta
+    Dim c As Object
+    c = UtworzElement(oDoc, oForm, &quot;TextField&quot;, sNazwa, x + 37, y, w, h)
+    c.Enabled = False &apos; Pole zablokowane - tylko do odczytu
+    c.BackgroundColor = RGB(240, 240, 240) &apos; Lekko szare tło dla odróżnienia
+End Sub
+
+&apos; =====================================================================
+&apos; GENERATOR FORMULARZY V2 (Oparty na oryginalnych strukturach XML)
+&apos; =====================================================================
+
+&apos; Pomocnicza funkcja do tworzenia SubFormularzy
+Function WstawSubForm(oDoc As Object, oMainForm As Object, sNazwa As String, sTabela As String) As Object
+    Dim oSub As Object
+    &apos; TWORZYMY instancję z poziomu dokumentu (oDoc), a wstawiamy do formularza (oMainForm)
+    oSub = oDoc.createInstance(&quot;com.sun.star.form.component.DataForm&quot;)
+    oSub.Name = sNazwa
+    oSub.CommandType = 0 &apos; Tabela
+    oSub.Command = sTabela
+    oMainForm.insertByIndex(oMainForm.getCount(), oSub)
+    WstawSubForm = oSub
+End Function
+
+&apos; ---------------------------------------------------------------------
+&apos; 1. GENERATOR PODGLĄDU AKTYWNOŚCI V2
+&apos; ---------------------------------------------------------------------
+Sub Generuj_PodgladAktywnosci_v2()
+    Dim oDoc As Object, oMain As Object, oSubAkt As Object, oGrid As Object
+    
+    oDoc = OtworzDoEdycji(&quot;frmPodgladAktywnosci_v2&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+	&apos; Główny formularz (Służy jako kontener na filtry, pusty wynik dla bezpieczeństwa)
+    oMain = InicjujDataForm(oDoc, &quot;SELECT * FROM pcz_oceny.pracownicy WHERE 1=0&quot;) 
+    oMain.CommandType = 2
+    
+    WstawTytul(oDoc, oMain, 10, 5, 150, 8, &quot;PODGLĄD AKTYWNOŚCI (V2)&quot;)
+    
+    &apos; Filtry (Niezwiązane z bazą danych, nazwy zgodne z XML)
+    WstawListeAktywna(oDoc, oMain, &quot;lstPracownicy&quot;, &quot;Pracownik:&quot;, &quot;&quot;, &quot;SELECT nazwisko || &apos; &apos; || imie, id_pracownika FROM pcz_oceny.pracownicy ORDER BY nazwisko&quot;, 10, 15, 80, 6)
+    WstawListeAktywna(oDoc, oMain, &quot;lstOkresy&quot;, &quot;Okres Oceny:&quot;, &quot;&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny ORDER BY data_od DESC&quot;, 100, 15, 60, 6)
+    
+    &apos; Podformularz Aktywności (Wymagany przez makro OdswiezFormularzGlowny)
+	oSubAkt = WstawSubForm(oDoc, oMain, &quot;SubForm_Aktywnosci&quot;, &quot;pcz_oceny.aktywnosci_pracownika&quot;)
+    oSubAkt.AllowInserts = False &apos; Blokada dodawania z poziomu grida!
+    
+    &apos; Grid Aktywności (Podpięty pod SubForm)
+    oGrid = WstawGrid(oDoc, oSubAkt, &quot;GridTable&quot;, 10, 25, 260, 70)
+    DodajKolumneGridLista(oGrid, &quot;id_typu_aktywnosci&quot;, &quot;Typ Aktywności&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci&quot;)
+    DodajKolumneGrid(oGrid, &quot;TextField&quot;, &quot;opis_szczegolowy&quot;, &quot;Opis / Tytuł&quot;, &quot;opis_szczegolowy&quot;)
+    DodajKolumneGrid(oGrid, &quot;DateField&quot;, &quot;data_rozpoczecia&quot;, &quot;Od&quot;, &quot;data_rozpoczecia&quot;)
+    DodajKolumneGrid(oGrid, &quot;DateField&quot;, &quot;data_zakonczenia&quot;, &quot;Do&quot;, &quot;data_zakonczenia&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;udzial_procentowy&quot;, &quot;Udział %&quot;, &quot;udzial_procentowy&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;przyznane_punkty&quot;, &quot;Punkty&quot;, &quot;przyznane_punkty&quot;)
+    DodajKolumneGrid(oGrid, &quot;NumericField&quot;, &quot;id_aktywnosci&quot;, &quot;ID Akt&quot;, &quot;id_aktywnosci&quot;)
+    
+    &apos; Przyciski akcji (Podpięte pod MainForm dla wygody klikania)
+    WstawPrzycisk(oDoc, oMain, &quot;btnDodaj&quot;, &quot;+ Dodaj&quot;, 10, 100, 40, 10)
+    WstawPrzycisk(oDoc, oMain, &quot;btnEdytuj&quot;, &quot;Edytuj&quot;, 55, 100, 40, 10)
+    WstawPrzycisk(oDoc, oMain, &quot;btnUsun&quot;, &quot;Usuń&quot;, 100, 100, 40, 10)
+    WstawPrzycisk(oDoc, oMain, &quot;btnRaport&quot;, &quot;Załącznik nr 1&quot;, 150, 100, 50, 10)
+    
+    &apos; Podpięcie makr V2
+    PodepnijMakro(oMain, &quot;lstPracownicy&quot;, &quot;com.sun.star.form.XChangeListener&quot;, &quot;changed&quot;, &quot;PodgladAktywnosci_v2.ZmienFiltry&quot;)
+    PodepnijMakro(oMain, &quot;lstOkresy&quot;, &quot;com.sun.star.form.XChangeListener&quot;, &quot;changed&quot;, &quot;PodgladAktywnosci_v2.ZmienFiltry&quot;)
+    
+    PodepnijMakro(oMain, &quot;btnDodaj&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;PodgladAktywnosci_v2.OtworzDoDodania&quot;)
+    PodepnijMakro(oMain, &quot;btnEdytuj&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;PodgladAktywnosci_v2.OtworzDoEdycji&quot;)
+    PodepnijMakro(oMain, &quot;btnUsun&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;PodgladAktywnosci_v2.UsunAktywnosc&quot;)
+    PodepnijMakro(oMain, &quot;btnRaport&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;GeneratorRaportow.GenerujZalacznik1&quot;)
+    
+    oDoc.setModified(True)
+    MsgBox &quot;Struktura frmPodgladAktywnosci_v2 wygenerowana pomyślnie!&quot;, 64, &quot;Sukces&quot;
+End Sub
+
+&apos; ---------------------------------------------------------------------
+&apos; 2. GENERATOR EDYTORA AKTYWNOŚCI V2
+&apos; ---------------------------------------------------------------------
+Sub Generuj_EdytorAktywnosci_v2()
+    Dim oDoc As Object, oForm As Object
+    
+    oDoc = OtworzDoEdycji(&quot;frmEdytorAktywnosci_v2&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    oForm = InicjujDataForm(oDoc, &quot;pcz_oceny.aktywnosci_pracownika&quot;)
+    oForm.Name = &quot;MainForm&quot;
+    WstawTytul(oDoc, oForm, 10, 5, 150, 8, &quot;EDYTOR AKTYWNOŚCI (V2)&quot;)
+    
+    &apos; Aktywne pola danych (Nazwy dokładnie takie same jak w starym makrze XML)
+    WstawListeAktywna(oDoc, oForm, &quot;lstTypAktywnosci&quot;, &quot;Typ Aktywności:&quot;, &quot;id_typu_aktywnosci&quot;, &quot;SELECT nazwa_aktywnosci, id_typu FROM pcz_oceny.typy_aktywnosci ORDER BY nazwa_aktywnosci&quot;, 10, 15, 120, 6)
+    WstawPoleAktywne(oDoc, oForm, &quot;TextField&quot;, &quot;txtTytul&quot;, &quot;Opis szczegółowy:&quot;, &quot;opis_szczegolowy&quot;, 10, 25, 150, 6)
+    
+    &apos; Daty
+    WstawPoleAktywne(oDoc, oForm, &quot;DateField&quot;, &quot;datRozpoczecia&quot;, &quot;Od kiedy:&quot;, &quot;data_rozpoczecia&quot;, 10, 35, 40, 6)
+    WstawPoleAktywne(oDoc, oForm, &quot;DateField&quot;, &quot;datZakonczenia&quot;, &quot;Do kiedy:&quot;, &quot;data_zakonczenia&quot;, 10, 45, 40, 6)
+    
+    &apos; Punkty i udział
+    WstawPoleAktywne(oDoc, oForm, &quot;NumericField&quot;, &quot;numUdzial&quot;, &quot;Udział (%):&quot;, &quot;udzial_procentowy&quot;, 10, 55, 30, 6)
+    WstawPoleAktywne(oDoc, oForm, &quot;NumericField&quot;, &quot;numPunkty&quot;, &quot;Przyznane Punkty:&quot;, &quot;przyznane_punkty&quot;, 10, 65, 30, 6)
+    
+    &apos; Pola informacyjne (Limity zablokowane na szaro)
+    WstawPoleInformacyjne(oDoc, oForm, &quot;txtPunktyMin&quot;, &quot;Limit Min:&quot;, 180, 15, 20, 6)
+    WstawPoleInformacyjne(oDoc, oForm, &quot;txtPunktyMax&quot;, &quot;Limit Max:&quot;, 180, 25, 20, 6)
+    
+    &apos; Przyciski
+    WstawPrzycisk(oDoc, oForm, &quot;btnZapisz&quot;, &quot;Zapisz&quot;, 10, 80, 40, 10)
+    WstawPrzycisk(oDoc, oForm, &quot;btnAnuluj&quot;, &quot;Anuluj&quot;, 60, 80, 40, 10)
+    
+    &apos; Zdarzenia formularza
+    Dim oEvLoad As New com.sun.star.script.ScriptEventDescriptor
+    oEvLoad.ListenerType = &quot;com.sun.star.form.XLoadListener&quot; : oEvLoad.EventMethod = &quot;loaded&quot; : oEvLoad.ScriptType = &quot;Script&quot;
+    oEvLoad.ScriptCode = &quot;vnd.sun.star.script:Standard.EdytorAktywnosci_v2.ZaladujKontekst_v2?language=Basic&amp;location=document&quot;
+    oForm.Parent.registerScriptEvent(0, oEvLoad)
+    
+    &apos; Zdarzenia kontrolek
+    PodepnijMakro(oForm, &quot;lstTypAktywnosci&quot;, &quot;com.sun.star.form.XChangeListener&quot;, &quot;changed&quot;, &quot;EdytorAktywnosci_v2.PoWyborzeTypuAktywnosci&quot;)
+    PodepnijMakro(oForm, &quot;btnZapisz&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;EdytorAktywnosci_v2.ZapiszIZamknij&quot;)
+    PodepnijMakro(oForm, &quot;btnAnuluj&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;EdytorAktywnosci_v2.AnulujZmiany&quot;)
+    
+    oDoc.setModified(True)
+    MsgBox &quot;Struktura frmEdytorAktywnosci_v2 wygenerowana pomyślnie!&quot;, 64, &quot;Sukces&quot;
+End Sub
 </script:module>
