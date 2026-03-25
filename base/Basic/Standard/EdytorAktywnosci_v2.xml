@@ -130,10 +130,98 @@ Sub OdswiezFormularzGlowny()
     End If
 End Sub
 
+&apos; Procedura pod przycisk &quot;Zapisz&quot; z TWARDĄ WALIDACJĄ
 Sub ZapiszIZamknij(oEvent As Object)
     Dim oForm As Object
     oForm = oEvent.Source.Model.Parent
-    If oForm.isNew Then oForm.insertRow() Else oForm.updateRow()
+    
+    &apos; Wymuszenie zapisu aktywnego pola (żeby złapać to, co użytkownik wpisał z palca sekundę przed kliknięciem &quot;Zapisz&quot;)
+    On Error Resume Next
+    ThisComponent.CurrentController.getControl(oEvent.Source.Model).setFocus()
+    On Error GoTo 0
+    
+    &apos; --- 1. SPRAWDZENIE TYPU AKTYWNOŚCI ---
+    Dim iTypID As Integer
+    Dim oListBox As Object
+    oListBox = oForm.getByName(&quot;lstTypAktywnosci&quot;)
+    
+    If IsEmpty(oListBox.SelectedValue) Then
+        MsgBox &quot;Wybierz typ aktywności przed zapisem!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    iTypID = CInt(oListBox.SelectedValue)
+    
+    &apos; --- 2. POBRANIE BAZOWEJ KONFIGURACJI ---
+    Dim oConn As Object, oStmt As Object, oRes As Object
+    oConn = oForm.ActiveConnection
+    oStmt = oConn.createStatement()
+    
+    Dim sSQL As String
+    sSQL = &quot;SELECT punkty_min, punkty_max FROM pcz_oceny.konfiguracja_aktywnosci &quot; &amp; _
+           &quot;WHERE id_okresu = &quot; &amp; g_WybranyOkresID_v2 &amp; &quot; AND id_typu = &quot; &amp; iTypID
+           
+    oRes = oStmt.executeQuery(sSQL)
+    If Not oRes.next() Then
+        MsgBox &quot;Błąd konfiguracji. Zapis przerwany.&quot;, 16, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    
+    Dim dPktMin As Double, dPktMax As Double
+    Dim bMaMin As Boolean, bMaMax As Boolean
+    dPktMin = oRes.getDouble(1): bMaMin = Not oRes.wasNull()
+    dPktMax = oRes.getDouble(2): bMaMax = Not oRes.wasNull()
+    
+    &apos; --- 3. ODTWORZENIE DYNAMICZNEGO MNOŻNIKA ---
+    Dim dMnoznikCalkowity As Double
+    dMnoznikCalkowity = 1.0
+    
+    Dim dtOd, dtDo
+    dtOd = oForm.getDate(oForm.findColumn(&quot;data_rozpoczecia&quot;))
+    dtDo = oForm.getDate(oForm.findColumn(&quot;data_zakonczenia&quot;))
+    
+    If Not IsEmpty(dtOd) And Not IsEmpty(dtDo) Then
+        If dtOd.Year &gt; 0 And dtDo.Year &gt; 0 Then
+            Dim dataPocz As Date, dataKon As Date
+            dataPocz = DateSerial(dtOd.Year, dtOd.Month, dtOd.Day)
+            dataKon = DateSerial(dtDo.Year, dtDo.Month, dtDo.Day)
+            Dim dDni As Double
+            dDni = DateDiff(&quot;d&quot;, dataPocz, dataKon)
+            If dDni &gt; 0 Then dMnoznikCalkowity = dDni / 365.25
+        End If
+    End If
+    
+    Dim dUdzial As Double
+    dUdzial = oForm.getDouble(oForm.findColumn(&quot;udzial_procentowy&quot;))
+    If dUdzial &gt; 0 Then dMnoznikCalkowity = dMnoznikCalkowity * (dUdzial / 100.0)
+    
+    &apos; --- 4. TWARDA WALIDACJA WPISANYCH PUNKTÓW ---
+    Dim wpisanePunkty As Double
+    wpisanePunkty = oForm.getDouble(oForm.findColumn(&quot;przyznane_punkty&quot;))
+    
+    Dim dDozwolonyMin As Double, dDozwolonyMax As Double
+    
+    If bMaMin Then
+        dDozwolonyMin = Int((dPktMin * dMnoznikCalkowity) + 0.5)
+        If wpisanePunkty &lt; dDozwolonyMin Then
+            MsgBox &quot;Przyznane punkty (&quot; &amp; wpisanePunkty &amp; &quot;) są poniżej dynamicznego limitu! Minimum to: &quot; &amp; dDozwolonyMin, 16, &quot;Błąd walidacji&quot;
+            Exit Sub
+        End If
+    End If
+    
+    If bMaMax Then
+        dDozwolonyMax = Int((dPktMax * dMnoznikCalkowity) + 0.5)
+        If wpisanePunkty &gt; dDozwolonyMax Then
+            MsgBox &quot;Przyznane punkty (&quot; &amp; wpisanePunkty &amp; &quot;) przekraczają dynamiczny limit! Maksimum to: &quot; &amp; dDozwolonyMax, 16, &quot;Błąd walidacji&quot;
+            Exit Sub
+        End If
+    End If
+    
+    &apos; --- 5. ZAPIS BEZPIECZNYCH DANYCH ---
+    If oForm.isNew Then
+        oForm.insertRow()
+    Else
+        oForm.updateRow()
+    End If
     
     OdswiezFormularzGlowny()
     ThisComponent.CurrentController.Frame.close(True)
@@ -245,9 +333,20 @@ Sub PrzeliczPunktyILimity(Optional oEvent As Object)
     cInfoMax = oForm.getByName(&quot;txtPunktyMax&quot;)
     cPunkty = oForm.getByName(&quot;numPunkty&quot;)
 
-    If bMaMin Then cInfoMin.Text = &quot;Min: &quot; &amp; (Int((dPktMin * dMnoznikCalkowity) * 10 + 0.5) / 10) Else cInfoMin.Text = &quot;Min: -&quot;
-    If bMaMax Then cInfoMax.Text = &quot;Max: &quot; &amp; (Int((dPktMax * dMnoznikCalkowity) * 10 + 0.5) / 10) Else cInfoMax.Text = &quot;Max: -&quot;
+    &apos; Dynamiczna zmiana szarych limitów (Zaokrąglenie do całości: Int(X + 0.5))
+    If bMaMin Then 
+        cInfoMin.Text = &quot;Min: &quot; &amp; Int((dPktMin * dMnoznikCalkowity) + 0.5)
+    Else 
+        cInfoMin.Text = &quot;Min: -&quot;
+    End If
+    
+    If bMaMax Then 
+        cInfoMax.Text = &quot;Max: &quot; &amp; Int((dPktMax * dMnoznikCalkowity) + 0.5)
+    Else 
+        cInfoMax.Text = &quot;Max: -&quot;
+    End If
 
+    &apos; Dynamiczne wyliczenie propozycji punktów
     Dim dWyliczonePunkty As Double
     If bMaDef Then
         dWyliczonePunkty = Int((dPktDef * dMnoznikCalkowity) + 0.5)

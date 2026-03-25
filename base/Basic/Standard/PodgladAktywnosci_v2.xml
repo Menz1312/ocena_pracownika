@@ -71,8 +71,19 @@ Sub ZmienFiltry(oEvent As Object)
         oSubAktywnosci.reload()
     End If
     
+	&apos; 4. ZMIANA SQL DLA PODSUMOWANIA (Bait and Switch!)
+    Dim oSubPodsumowanie As Object
     If oMainForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
-        oMainForm.getByName(&quot;SubForm_Podsumowanie&quot;).reload()
+        oSubPodsumowanie = oMainForm.getByName(&quot;SubForm_Podsumowanie&quot;)
+        
+        Dim sSQL_Podsum As String
+        sSQL_Podsum = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;f_podsumowanie_wertykalne&quot;&quot;(&quot; &amp; _
+                      g_WybranyPracownikID_v2 &amp; &quot;, &quot; &amp; g_WybranyOkresID_v2 &amp; &quot;) ORDER BY &quot;&quot;kolejnosc_sortowania&quot;&quot;&quot;
+        
+        oSubPodsumowanie.CommandType = 2 &apos; Przełączamy z Tabeli na SQL Command
+        oSubPodsumowanie.EscapeProcessing = False &apos; WYŁĄCZAMY parser, żeby Base nie spanikował!
+        oSubPodsumowanie.Command = sSQL_Podsum
+        oSubPodsumowanie.reload()
     End If
     
     If oMainForm.hasByName(&quot;SubForm_DaneGlowne&quot;) Then
