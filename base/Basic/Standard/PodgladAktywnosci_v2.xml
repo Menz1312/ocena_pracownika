@@ -63,8 +63,13 @@ Sub ZmienFiltry(oEvent As Object)
         oSubAktywnosci = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
         
         Dim sSQL As String
-        sSQL = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE &quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; g_WybranyPracownikID_v2 &amp; _
-               &quot; AND &quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND &quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; ORDER BY &quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
+        sSQL = &quot;SELECT ap.*, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
+               &quot;FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; ap &quot; &amp; _
+               &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;typy_aktywnosci&quot;&quot; ta ON ap.&quot;&quot;id_typu_aktywnosci&quot;&quot; = ta.&quot;&quot;id_typu&quot;&quot; &quot; &amp; _
+               &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;konfiguracja_aktywnosci&quot;&quot; ka ON ta.&quot;&quot;id_typu&quot;&quot; = ka.&quot;&quot;id_typu&quot;&quot; AND ka.&quot;&quot;id_okresu&quot;&quot; = &quot; &amp; g_WybranyOkresID_v2 &amp; &quot; &quot; &amp; _
+               &quot;WHERE ap.&quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; g_WybranyPracownikID_v2 &amp; _
+               &quot; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; &quot; &amp; _
+               &quot;ORDER BY ka.&quot;&quot;kolejnosc&quot;&quot; ASC, ap.&quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
         
         oSubAktywnosci.CommandType = 2 &apos; 2 = SQL Command
         oSubAktywnosci.Command = sSQL
@@ -143,6 +148,50 @@ Sub UsunAktywnosc(oEvent As Object)
         Exit Sub
 BladSQL:
         MsgBox &quot;Błąd usuwania SQL: &quot; &amp; Error, 16, &quot;Błąd&quot;
+    End If
+End Sub
+
+&apos; =====================================================================
+&apos; CZYSZCZENIE RAM I RESET FORMULARZA (Wyzwalacz: Podczas ładowania)
+&apos; =====================================================================
+Sub CzyscFiltryPrzyStarcie(Optional oEvent As Object)
+    &apos; 1. Czyszczenie pamięci RAM (Zabezpiecza przed generowaniem raportu dla starych danych)
+    g_WybranyPracownikID_v2 = 0
+    g_WybranyOkresID_v2 = 0
+    g_TrwaOdswiezanie_v2 = False
+    
+    If IsMissing(oEvent) Then Exit Sub
+    
+    Dim oForm As Object
+    oForm = oEvent.Source
+    
+    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
+
+    &apos; 2. Czyszczenie List Rozwijanych (wizualnie)
+    On Error Resume Next
+    If oForm.hasByName(&quot;lstPracownicy&quot;) Then oForm.getByName(&quot;lstPracownicy&quot;).SelectedValue = Empty
+    If oForm.hasByName(&quot;lstOkresy&quot;) Then oForm.getByName(&quot;lstOkresy&quot;).SelectedValue = Empty
+    On Error GoTo 0
+    
+    &apos; 3. Przywrócenie &quot;ślepego startu&quot; dla głównego Grida
+    If oForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
+        Dim oSubAkt As Object
+        oSubAkt = oForm.getByName(&quot;SubForm_Aktywnosci&quot;)
+        oSubAkt.CommandType = 2
+        oSubAkt.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE 1=0&quot;
+        oSubAkt.reload()
+    End If
+    
+    &apos; 4. Przywrócenie &quot;ślepego startu&quot; dla Grida Podsumowania (Bait and Switch)
+    If oForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
+        Dim oSubPod As Object
+        oSubPod = oForm.getByName(&quot;SubForm_Podsumowanie&quot;)
+        
+        &apos; Wracamy do bezpiecznego szkieletu-widoku, by parser się nie denerwował
+        oSubPod.CommandType = 0 &apos; 0 = Tabela/Widok
+        oSubPod.EscapeProcessing = True &apos; Włączamy parser z powrotem
+        oSubPod.Command = &quot;pcz_oceny.v_podsumowanie_struktura&quot;
+        oSubPod.reload()
     End If
 End Sub
 </script:module>

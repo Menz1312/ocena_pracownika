@@ -524,4 +524,249 @@ Sub GenerujZalacznik1_v2(Optional oEvent As Object)
     
     MsgBox &quot;Załącznik nr 1 został pomyślnie wygenerowany (uwzględniono mnożnik lat i limity publikacji)!&quot;, 64, &quot;Gotowe&quot;
 End Sub
+
+&apos; =====================================================================
+&apos; MAKRO V2: Generowanie Załącznika nr 2 (Ocena Okresowa z RAM)
+&apos; =====================================================================
+Sub GenerujOceneOkresowa_v2(Optional oEvent As Object)
+    
+    &apos; --- ZABEZPIECZENIE PAMIĘCI RAM ---
+    If PodgladAktywnosci_v2.g_WybranyPracownikID_v2 = 0 Or PodgladAktywnosci_v2.g_WybranyOkresID_v2 = 0 Then
+        MsgBox &quot;Wybierz pracownika i okres oceny na głównym ekranie przed wygenerowaniem raportu!&quot;, 48, &quot;Błąd&quot;
+        Exit Sub
+    End If
+
+    Dim iPracID As Integer, iOkrID As Integer
+    iPracID = PodgladAktywnosci_v2.g_WybranyPracownikID_v2
+    iOkrID = PodgladAktywnosci_v2.g_WybranyOkresID_v2
+
+    Dim oStatement As Object, oResultSet As Object
+    Dim sSQL As String, sSciezkaSzablonu As String, sUrl As String
+    Dim oDoc As Object, oConn As Object
+    
+    &apos; ========================================================
+    &apos; ŚCIEŻKA DO SZABLONU
+    sSciezkaSzablonu = &quot;/home/tomasz/Dokumenty/studia/praca_inzynierska/Szablon_Zal2_Ocena.ott&quot;
+    &apos; ========================================================
+    
+    If Dir(sSciezkaSzablonu) = &quot;&quot; Then
+        MsgBox &quot;Nie znaleziono pliku szablonu: &quot; &amp; sSciezkaSzablonu, 16, &quot;Błąd&quot;
+        Exit Sub
+    End If
+    sUrl = ConvertToURL(sSciezkaSzablonu)
+
+    Dim args(0) As New com.sun.star.beans.PropertyValue
+    args(0).Name = &quot;AsTemplate&quot;
+    args(0).Value = True
+    oDoc = StarDesktop.loadComponentFromURL(sUrl, &quot;_blank&quot;, 0, args())
+    
+    oConn = ThisDatabaseDocument.CurrentController.ActiveConnection
+    oStatement = oConn.createStatement()
+    
+    &apos; --- SUPER-ZAPYTANIE CTE (Niezależne od filtr_uzytkownika) ---
+    sSQL = &quot;WITH dysc AS ( &quot; &amp; _
+           &quot;  SELECT id_pracownika, STRING_AGG(d.nazwa_dyscypliny || &apos; (&apos; || dk.udzial_procentowy || &apos;%)&apos;, &apos;, &apos;) AS dysc_sklejone &quot; &amp; _
+           &quot;  FROM pcz_oceny.deklaracje dk &quot; &amp; _
+           &quot;  JOIN pcz_oceny.dyscypliny d ON dk.id_dyscypliny = d.id_dyscypliny &quot; &amp; _
+           &quot;  WHERE dk.id_pracownika = &quot; &amp; iPracID &amp; &quot; AND dk.id_okresu = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+           &quot;  GROUP BY id_pracownika &quot; &amp; _
+           &quot;), &quot; &amp; _
+           &quot;funkcje AS ( &quot; &amp; _
+           &quot;  SELECT ap.id_pracownika, STRING_AGG(DISTINCT ta.nazwa_aktywnosci, &apos;, &apos;) AS funk_kier &quot; &amp; _
+           &quot;  FROM pcz_oceny.aktywnosci_pracownika ap &quot; &amp; _
+           &quot;  JOIN pcz_oceny.typy_aktywnosci ta ON ap.id_typu_aktywnosci = ta.id_typu &quot; &amp; _
+           &quot;  JOIN pcz_oceny.okresy_oceny oo ON oo.id_okresu = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+           &quot;  WHERE ap.id_pracownika = &quot; &amp; iPracID &amp; &quot; &quot; &amp; _
+           &quot;    AND ap.data_rozpoczecia &gt;= oo.data_od AND ap.data_rozpoczecia &lt;= oo.data_do &quot; &amp; _
+           &quot;    AND (ta.nazwa_aktywnosci ILIKE &apos;Funkcja%&apos; OR ta.nazwa_aktywnosci ILIKE &apos;Pełnienie funkcji%&apos;) &quot; &amp; _
+           &quot;  GROUP BY ap.id_pracownika &quot; &amp; _
+           &quot;), &quot; &amp; _
+           &quot;poprzednia AS ( &quot; &amp; _
+           &quot;  SELECT o_prev.id_pracownika, &quot; &amp; _
+           &quot;    COALESCE( &quot; &amp; _
+           &quot;      (SELECT tresc_decyzji FROM pcz_oceny.decyzje_odwolawcze WHERE id_decyzji = o_prev.odw_id_decyzji), &quot; &amp; _
+           &quot;      (SELECT nazwa_oceny FROM pcz_oceny.skala_ocen WHERE id_oceny = o_prev.kom_id_oceny), &quot; &amp; _
+           &quot;      (SELECT nazwa_oceny FROM pcz_oceny.skala_ocen WHERE id_oceny = o_prev.kier_id_oceny_total) &quot; &amp; _
+           &quot;    ) || &apos; (&apos; || TO_CHAR(COALESCE(o_prev.odw_zatwierdzil_data, o_prev.kom_zatwierdzil_data, o_prev.kier_zatwierdzil_data), &apos;DD.MM.YYYY&apos;) || &apos;)&apos; AS poprz_ocena &quot; &amp; _
+           &quot;  FROM pcz_oceny.oceny_okresowe o_prev &quot; &amp; _
+           &quot;  JOIN pcz_oceny.okresy_oceny oo_prev ON o_prev.id_okresu = oo_prev.id_okresu &quot; &amp; _
+           &quot;  WHERE o_prev.id_pracownika = &quot; &amp; iPracID &amp; &quot; &quot; &amp; _
+           &quot;    AND oo_prev.data_od &lt; (SELECT data_od FROM pcz_oceny.okresy_oceny WHERE id_okresu = &quot; &amp; iOkrID &amp; &quot;) &quot; &amp; _
+           &quot;  ORDER BY oo_prev.data_od DESC LIMIT 1 &quot; &amp; _
+           &quot;) &quot; &amp; _
+           &quot;SELECT &quot; &amp; _
+           &quot;  p.nazwisko || &apos; &apos; || p.imie AS pracownik, p.orcid, p.data_zatrudnienia, &quot; &amp; _
+           &quot;  COALESCE(wd.nazwa_jednostki, &apos;&apos;) || &apos;, &apos; || COALESCE(jo.nazwa_jednostki, &apos;&apos;) AS wydzial_katedra, &quot; &amp; _
+           &quot;  st.nazwa_stopnia, s.nazwa_stanowiska, gs.nazwa_grupy, &quot; &amp; _
+           &quot;  oo.data_od, oo.data_do, &quot; &amp; _
+           &quot;  o.suma_pkt_pub, o.suma_pkt_dyd, o.suma_pkt_org, o.suma_pkt_br, o.suma_pkt_total, &quot; &amp; _
+           &quot;  o.kier_id_roli, op.nazwa_oceny, od.nazwa_oceny, org.nazwa_oceny, ob.nazwa_oceny, ot.nazwa_oceny, &quot; &amp; _
+           &quot;  o.kier_uzasadnienie_punktow, o.kier_uzasadnienie_oceny, o.kier_zatwierdzil_data, &quot; &amp; _
+           &quot;  o.kom_id_oceny, o.kom_uzasadnienie, o.kom_wniosek_zatrudnienie, o.kom_zatwierdzil_data, &quot; &amp; _
+           &quot;  o.odw_id_decyzji, o.odw_uzasadnienie, o.odw_zatwierdzil_data, &quot; &amp; _
+           &quot;  dysc.dysc_sklejone, we.opis_etatu, funkcje.funk_kier, poprzednia.poprz_ocena &quot; &amp; _
+           &quot;FROM pcz_oceny.pracownicy p &quot; &amp; _
+           &quot;JOIN pcz_oceny.okresy_oceny oo ON oo.id_okresu = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+           &quot;JOIN pcz_oceny.oceny_okresowe o ON o.id_pracownika = p.id_pracownika AND o.id_okresu = oo.id_okresu &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.stopnie_tytuly st ON p.id_stopnia = st.id_stopnia &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.stanowiska s ON p.id_stanowiska = s.id_stanowiska &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.grupy_stanowisk gs ON p.id_grupy_stanowisk = gs.id_grupy_stanowisk &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.jednostki_organizacyjne jo ON p.id_jednostki = jo.id_jednostki &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.jednostki_organizacyjne wd ON jo.id_jednostki_nadrzednej = wd.id_jednostki &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.wymiar_etatu we ON p.id_etatu = we.id_etatu &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.skala_ocen op ON o.kier_id_oceny_pub = op.id_oceny &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.skala_ocen od ON o.kier_id_oceny_dyd = od.id_oceny &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.skala_ocen org ON o.kier_id_oceny_org = org.id_oceny &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.skala_ocen ob ON o.kier_id_oceny_br = ob.id_oceny &quot; &amp; _
+           &quot;LEFT JOIN pcz_oceny.skala_ocen ot ON o.kier_id_oceny_total = ot.id_oceny &quot; &amp; _
+           &quot;LEFT JOIN dysc ON dysc.id_pracownika = p.id_pracownika &quot; &amp; _
+           &quot;LEFT JOIN funkcje ON funkcje.id_pracownika = p.id_pracownika &quot; &amp; _
+           &quot;LEFT JOIN poprzednia ON poprzednia.id_pracownika = p.id_pracownika &quot; &amp; _
+           &quot;WHERE p.id_pracownika = &quot; &amp; iPracID
+           
+    oResultSet = oStatement.executeQuery(sSQL)
+    
+    If oResultSet.next() Then
+        
+        &apos; --- 1. DANE PRACOWNIKA ---
+        WstawDoZakladki(oDoc, &quot;bmkImieNazwisko&quot;, oResultSet.getString(1))
+        WstawDoZakladki(oDoc, &quot;bmkOrcid&quot;, oResultSet.getString(2))
+        
+        Dim sDataZatrudnienia As String
+        sDataZatrudnienia = oResultSet.getString(3)
+        If sDataZatrudnienia &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkDataZatrudnienia&quot;, Format(CDateFromIso(sDataZatrudnienia), &quot;DD.MM.YYYY&quot;))
+        
+        WstawDoZakladki(oDoc, &quot;bmkMiejscePracy&quot;, oResultSet.getString(4))
+        WstawDoZakladki(oDoc, &quot;bmkTytulStopien&quot;, oResultSet.getString(5))
+        WstawDoZakladki(oDoc, &quot;bmkStanowisko&quot;, oResultSet.getString(6))
+        
+        WstawDoZakladki(oDoc, &quot;bmkDyscyplina&quot;, oResultSet.getString(31))
+        WstawDoZakladki(oDoc, &quot;bmkWymiarCzasu&quot;, oResultSet.getString(32))
+        
+        Dim sFunkcje As String
+        sFunkcje = oResultSet.getString(33)
+        If sFunkcje &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkFunkcje&quot;, sFunkcje) Else WstawDoZakladki(oDoc, &quot;bmkFunkcje&quot;, &quot;Nie dotyczy&quot;)
+        
+        Dim sPoprzednia As String
+        sPoprzednia = oResultSet.getString(34)
+        If sPoprzednia &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkPoprzedniaOcena&quot;, sPoprzednia) Else WstawDoZakladki(oDoc, &quot;bmkPoprzedniaOcena&quot;, &quot;Brak wcześniejszej oceny&quot;)
+        
+        &apos; --- 2. SKREŚLENIA: GRUPA STANOWISK ---
+        Dim sGrupa As String
+        sGrupa = oResultSet.getString(7)
+        
+        If sGrupa = &quot;Badawczo-dydaktyczny&quot; Then
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaDyd&quot;)
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaBad&quot;)
+        ElseIf sGrupa = &quot;Badawczy&quot; Then
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaDyd&quot;)
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaBadDyd&quot;)
+        ElseIf sGrupa = &quot;Dydaktyczny&quot; Then
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaBad&quot;)
+            PrzekreslZakladke(oDoc, &quot;bmkOpcjaBadDyd&quot;)
+        End If
+        
+        &apos; --- 3. OKRES OCENY ---
+        Dim dDataOd As Date, dDataDo As Date
+        dDataOd = CDateFromIso(oResultSet.getString(8))
+        dDataDo = CDateFromIso(oResultSet.getString(9))
+        WstawDoZakladki(oDoc, &quot;bmkOkresOceny&quot;, Format(dDataOd, &quot;YYYY&quot;) &amp; &quot; - &quot; &amp; Format(dDataDo, &quot;YYYY&quot;))
+        
+        &apos; --- 4. ZAMROŻONE PUNKTY ---
+        WstawDoZakladki(oDoc, &quot;bmkPktPub&quot;, oResultSet.getString(10))
+        WstawDoZakladki(oDoc, &quot;bmkPktDyd&quot;, oResultSet.getString(11))
+        WstawDoZakladki(oDoc, &quot;bmkPktOrg&quot;, oResultSet.getString(12))
+        WstawDoZakladki(oDoc, &quot;bmkPktBR&quot;, oResultSet.getString(13))
+        WstawDoZakladki(oDoc, &quot;bmkPktTotal&quot;, oResultSet.getString(14))
+        
+        &apos; --- 5. ETAP I: KIEROWNIK ---
+        Dim iRolaKierownika As Integer
+        iRolaKierownika = oResultSet.getInt(15)
+        
+        If Not oResultSet.wasNull() And iRolaKierownika &gt; 0 Then
+            If iRolaKierownika = 1 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
+            ElseIf iRolaKierownika = 2 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaKierownik&quot;)
+            ElseIf iRolaKierownika = 3 Then
+                PrzekreslZakladke(oDoc, &quot;bmkRolaProdziekan&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkRolaDziekan&quot;)
+            End If
+        End If
+        
+        WstawDoZakladki(oDoc, &quot;bmkKierOcenaPub&quot;, oResultSet.getString(16))
+        WstawDoZakladki(oDoc, &quot;bmkKierOcenaDyd&quot;, oResultSet.getString(17))
+        WstawDoZakladki(oDoc, &quot;bmkKierOcenaOrg&quot;, oResultSet.getString(18))
+        WstawDoZakladki(oDoc, &quot;bmkKierOcenaBR&quot;, oResultSet.getString(19))
+        WstawDoZakladki(oDoc, &quot;bmkKierOcenaTotal&quot;, oResultSet.getString(20))
+        WstawDoZakladki(oDoc, &quot;bmkKierUzasPkt&quot;, oResultSet.getString(21))
+        WstawDoZakladki(oDoc, &quot;bmkKierUzasOceny&quot;, oResultSet.getString(22))
+        
+        If oResultSet.getString(23) &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkKierData&quot;, Format(CDateFromIso(Left(oResultSet.getString(23), 10)), &quot;DD.MM.YYYY&quot;))
+        
+        &apos; --- 6. ETAP II: KOMISJA ---
+        Dim iKomOcena As Integer
+        iKomOcena = oResultSet.getInt(24)
+        
+        If Not oResultSet.wasNull() And iKomOcena &gt; 0 Then
+            If iKomOcena = 3 Then &apos; Negatywna
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa2&quot;)
+                
+            ElseIf iKomOcena = 1 Then &apos; Pozytywna
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaWarunkowa2&quot;)
+                
+            ElseIf iKomOcena = 2 Then &apos; Pozytywna warunkowa
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaNegatywna2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkKomOcenaPozytywna2&quot;)
+            End If
+        End If
+        
+        WstawDoZakladki(oDoc, &quot;bmkKomUzas&quot;, oResultSet.getString(25))
+        WstawDoZakladki(oDoc, &quot;bmkKomWniosek&quot;, oResultSet.getString(26))
+        If oResultSet.getString(27) &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkKomData&quot;, Format(CDateFromIso(Left(oResultSet.getString(27), 10)), &quot;DD.MM.YYYY&quot;))
+        
+        &apos; --- 7. ETAP III: ODWOŁANIE ---
+        Dim iOdwDecyzja As Integer
+        iOdwDecyzja = oResultSet.getInt(28)
+        
+        If Not oResultSet.wasNull() And iOdwDecyzja &gt; 0 Then
+            If iOdwDecyzja = 1 Then &apos; Utrzymuje negatywną
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
+                
+            ElseIf iOdwDecyzja = 2 Then &apos; Utrzymuje warunkową
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
+                
+            ElseIf iOdwDecyzja = 3 Then &apos; Zmienia na warunkową
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja4&quot;)
+                
+            ElseIf iOdwDecyzja = 4 Then &apos; Zmienia na pozytywną
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja1&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja2&quot;)
+                PrzekreslZakladke(oDoc, &quot;bmkOdwDecyzja3&quot;)
+            End If
+        End If
+        
+        WstawDoZakladki(oDoc, &quot;bmkOdwUzas&quot;, oResultSet.getString(29))
+        If oResultSet.getString(30) &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkOdwData&quot;, Format(CDateFromIso(Left(oResultSet.getString(30), 10)), &quot;DD.MM.YYYY&quot;))
+        
+    End If
+    
+    MsgBox &quot;Dokument Oceny Okresowej (Załącznik nr 2) został pomyślnie wygenerowany!&quot;, 64, &quot;Sukces&quot;
+End Sub
 </script:module>

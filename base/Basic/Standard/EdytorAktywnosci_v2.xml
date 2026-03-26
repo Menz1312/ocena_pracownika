@@ -3,6 +3,39 @@
 <script:module xmlns:script="http://openoffice.org/2000/script" script:name="EdytorAktywnosci_v2" script:language="StarBasic" script:moduleType="normal">REM  ***** BASIC  *****
 Option Explicit
 
+&apos; =====================================================================
+&apos; KONFIGURACJA LISTY ROZWIJANEJ PRZY OTWARCIU EDYTORA
+&apos; =====================================================================
+Sub PrzyStarcieEdytora(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source
+    
+    &apos; Zabezpieczenie: interesuje nas tylko zdarzenie z głównego formularza
+    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
+    
+    &apos; Upewnienie się, że mamy wybrany okres w RAM
+    If PodgladAktywnosci_v2.g_WybranyOkresID_v2 = 0 Then Exit Sub
+
+    &apos; Odnalezienie listy rozwijanej
+    Dim oListBox As Object
+    If oForm.hasByName(&quot;lstTypAktywnosci&quot;) Then
+        oListBox = oForm.getByName(&quot;lstTypAktywnosci&quot;)
+        
+        &apos; Czysty SQL sklejający (konkatenacja) Lp. z Nazwą oraz sortujący po kolejności
+        Dim sSQL As String
+        sSQL = &quot;SELECT ka.lp || &apos; &apos; || ta.nazwa_aktywnosci, ta.id_typu &quot; &amp; _
+               &quot;FROM pcz_oceny.typy_aktywnosci ta &quot; &amp; _
+               &quot;JOIN pcz_oceny.konfiguracja_aktywnosci ka ON ta.id_typu = ka.id_typu &quot; &amp; _
+               &quot;WHERE ka.id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; &quot; &amp; _
+               &quot;ORDER BY ka.kolejnosc ASC&quot;
+        
+        &apos; Wstrzyknięcie zapytania do listy i jej odświeżenie
+        oListBox.ListSourceType = 3 &apos; 3 = SQL
+        oListBox.ListSource = Array(sSQL)
+        oListBox.refresh()
+    End If
+End Sub
+
 &apos; ---------------------------------------------------------------------
 &apos; WYZWALACZ: Podepnij to pod zdarzenie &quot;Podczas ładowania&quot; w SubForm_Edycja
 &apos; ---------------------------------------------------------------------
@@ -22,6 +55,7 @@ Sub ZaladujKontekst_v2(oEvent As Object)
         oForm.reload()
     End If
     On Error GoTo 0
+    PrzyStarcieEdytora(oEvent)
 End Sub
 
 &apos; ---------------------------------------------------------------------
