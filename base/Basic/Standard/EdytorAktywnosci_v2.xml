@@ -3,116 +3,79 @@
 <script:module xmlns:script="http://openoffice.org/2000/script" script:name="EdytorAktywnosci_v2" script:language="StarBasic" script:moduleType="normal">REM  ***** BASIC  *****
 Option Explicit
 
-&apos; =====================================================================
-&apos; KONFIGURACJA LIST ROZWIJANYCH PRZY OTWARCIU EDYTORA
-&apos; =====================================================================
-Sub PrzyStarcieEdytora(oEvent As Object)
-    Dim oForm As Object
-    oForm = oEvent.Source
-    
-    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
-    If PodgladAktywnosci_v2.g_WybranyOkresID_v2 = 0 Then Exit Sub
-
-    &apos; 1. Lista typów aktywności
-    Dim oListTypy As Object
-    If oForm.hasByName(&quot;lstTypAktywnosci&quot;) Then
-        oListTypy = oForm.getByName(&quot;lstTypAktywnosci&quot;)
-        Dim sSQL As String
-        sSQL = &quot;SELECT ka.lp || &apos; &apos; || ta.nazwa_aktywnosci, ta.id_typu &quot; &amp; _
-               &quot;FROM pcz_oceny.typy_aktywnosci ta &quot; &amp; _
-               &quot;JOIN pcz_oceny.konfiguracja_aktywnosci ka ON ta.id_typu = ka.id_typu &quot; &amp; _
-               &quot;WHERE ka.id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; &quot; &amp; _
-               &quot;ORDER BY ka.kolejnosc ASC&quot;
-        
-        oListTypy.ListSourceType = 3
-        oListTypy.ListSource = Array(sSQL)
-        oListTypy.refresh()
-    End If
-    
-    &apos; 2. NOWOŚĆ: Lista bonusów / finansowania (Ładowana z bazy dla wybranego okresu)
-    Dim oListBonus As Object
-    If oForm.hasByName(&quot;lstBonus&quot;) Then
-        oListBonus = oForm.getByName(&quot;lstBonus&quot;)
-        Dim sSQLBonus As String
-        sSQLBonus = &quot;SELECT opis, id_bonusu FROM pcz_oceny.bonusy &quot; &amp; _
-                    &quot;WHERE id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; ORDER BY mnoznik ASC&quot;
-        
-        oListBonus.ListSourceType = 3
-        oListBonus.ListSource = Array(sSQLBonus)
-        oListBonus.refresh()
-    End If
-End Sub
-
+&apos; ---------------------------------------------------------
+&apos; INICJALIZACJA FORMULARZA
+&apos; ---------------------------------------------------------
 Sub ZaladujKontekst_v2(oEvent As Object)
     Dim oForm As Object
     oForm = oEvent.Source
     If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
     
     On Error Resume Next
-    If g_TrybEdytora_v2 = &quot;DODAJ&quot; Then
+    If PodgladAktywnosci_v2.g_TrybEdytora_v2 = &quot;DODAJ&quot; Then
         oForm.moveToInsertRow()
-        oForm.updateInt(oForm.findColumn(&quot;id_pracownika&quot;), g_WybranyPracownikID_v2)
-    ElseIf g_TrybEdytora_v2 = &quot;EDYTUJ&quot; Then
-        oForm.Filter = &quot;&quot;&quot;id_aktywnosci&quot;&quot; = &quot; &amp; g_WybranaAktywnoscID_v2
+        oForm.updateInt(oForm.findColumn(&quot;id_pracownika&quot;), PodgladAktywnosci_v2.g_WybranyPracownikID_v2)
+    ElseIf PodgladAktywnosci_v2.g_TrybEdytora_v2 = &quot;EDYTUJ&quot; Then
+        oForm.Filter = &quot;&quot;&quot;id_aktywnosci&quot;&quot; = &quot; &amp; PodgladAktywnosci_v2.g_WybranaAktywnoscID_v2
         oForm.ApplyFilter = True
         oForm.reload()
     End If
     On Error GoTo 0
+    
     PrzyStarcieEdytora(oEvent)
 End Sub
 
-&apos; =====================================================================
-&apos; DYNAMIKA INTERFEJSU PO WYBORZE TYPU AKTYWNOŚCI
-&apos; =====================================================================
+Sub PrzyStarcieEdytora(oEvent As Object)
+    Dim oForm As Object
+    oForm = oEvent.Source
+    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
+    If PodgladAktywnosci_v2.g_WybranyOkresID_v2 = 0 Then Exit Sub
+
+    Dim sSQL As String
+    If oForm.hasByName(&quot;lstTypAktywnosci&quot;) Then
+        sSQL = &quot;SELECT ka.lp || &apos; &apos; || ta.nazwa_aktywnosci, ta.id_typu &quot; &amp; _
+               &quot;FROM pcz_oceny.typy_aktywnosci ta &quot; &amp; _
+               &quot;JOIN pcz_oceny.konfiguracja_aktywnosci ka ON ta.id_typu = ka.id_typu &quot; &amp; _
+               &quot;WHERE ka.id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; ORDER BY ka.kolejnosc ASC&quot;
+        oForm.getByName(&quot;lstTypAktywnosci&quot;).ListSource = Array(sSQL)
+        oForm.getByName(&quot;lstTypAktywnosci&quot;).refresh()
+    End If
+    
+    If oForm.hasByName(&quot;lstBonus&quot;) Then
+        sSQL = &quot;SELECT opis, id_bonusu FROM pcz_oceny.bonusy &quot; &amp; _
+               &quot;WHERE id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; ORDER BY mnoznik ASC&quot;
+        oForm.getByName(&quot;lstBonus&quot;).ListSource = Array(sSQL)
+        oForm.getByName(&quot;lstBonus&quot;).refresh()
+    End If
+End Sub
+
+&apos; ---------------------------------------------------------
+&apos; OBSŁUGA INTERFEJSU
+&apos; ---------------------------------------------------------
 Sub PoWyborzeTypuAktywnosci(oEvent As Object)
     Dim oForm As Object, oListBox As Object
-    Dim iWybraneID As Integer
-    Dim oConn As Object, oStmt As Object, oResult As Object
-    Dim sSQL As String
-    
-    Dim bCzyCiagla As Boolean, bCzyWspol As Boolean, bCzyMnoznik As Boolean
-    Dim dPktMin As Double, dPktMax As Double, dPktDef As Double
-    Dim bMaMin As Boolean, bMaMax As Boolean, bMaDef As Boolean
-    
-    Dim cDataDo As Object, cUdzial As Object, cPktBazowe As Object
-    Dim cInfoMin As Object, cInfoMax As Object, cBonus As Object
-    
     oListBox = oEvent.Source.Model
     oForm = oListBox.Parent
     If IsEmpty(oListBox.SelectedValue) Then Exit Sub
-    iWybraneID = CInt(oListBox.SelectedValue)
     
-    cDataDo = oForm.getByName(&quot;datZakonczenia&quot;)
-    cUdzial = oForm.getByName(&quot;numUdzial&quot;)
-    cPktBazowe = oForm.getByName(&quot;numPunktyBazowe&quot;)
-    cInfoMin = oForm.getByName(&quot;txtPunktyMin&quot;)
-    cInfoMax = oForm.getByName(&quot;txtPunktyMax&quot;)
-    cBonus = oForm.getByName(&quot;lstBonus&quot;)
-    
-    sSQL = &quot;SELECT &quot; &amp; _
-           &quot;  ta.czy_ciagla, ta.czy_udzial, ta.czy_mnoznik, &quot; &amp; _
-           &quot;  ka.punkty_min, ka.punkty_max, ka.punkty_domyslne &quot; &amp; _
+    Dim sSQL As String
+    sSQL = &quot;SELECT ta.czy_ciagla, ta.czy_udzial, ta.czy_mnoznik, ka.punkty_min, ka.punkty_max, ka.punkty_domyslne &quot; &amp; _
            &quot;FROM pcz_oceny.typy_aktywnosci ta &quot; &amp; _
            &quot;JOIN pcz_oceny.konfiguracja_aktywnosci ka ON ta.id_typu = ka.id_typu &quot; &amp; _
-           &quot;WHERE ka.id_okresu = &quot; &amp; g_WybranyOkresID_v2 &amp; &quot; AND ta.id_typu = &quot; &amp; iWybraneID
+           &quot;WHERE ka.id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; AND ta.id_typu = &quot; &amp; CInt(oListBox.SelectedValue)
            
-    oConn = oForm.ActiveConnection
-    oStmt = oConn.createStatement()
+    Dim oStmt As Object, oResult As Object
+    oStmt = oForm.ActiveConnection.createStatement()
     oResult = oStmt.executeQuery(sSQL)
+    If Not oResult.next() Then Exit Sub
     
-    If oResult.next() Then
-        bCzyCiagla = oResult.getBoolean(1)
-        bCzyWspol = oResult.getBoolean(2)
-        bCzyMnoznik = oResult.getBoolean(3) &apos; Flaga naszego nowego bonusu
-        
-        dPktMin = oResult.getDouble(4): bMaMin = Not oResult.wasNull()
-        dPktMax = oResult.getDouble(5): bMaMax = Not oResult.wasNull()
-        dPktDef = oResult.getDouble(6): bMaDef = Not oResult.wasNull()
-    Else
-        Exit Sub
-    End If
+    Dim bCzyCiagla As Boolean: bCzyCiagla = oResult.getBoolean(1)
+    Dim bCzyWspol As Boolean:  bCzyWspol = oResult.getBoolean(2)
+    Dim bCzyMnoznik As Boolean: bCzyMnoznik = oResult.getBoolean(3)
+    Dim dPktDef As Double:     dPktDef = oResult.getDouble(6)
+    Dim bMaDef As Boolean:     bMaDef = Not oResult.wasNull()
     
-    &apos; A. Czy ciągła
+    Dim cDataDo As Object: cDataDo = oForm.getByName(&quot;datZakonczenia&quot;)
     If bCzyCiagla Then
         cDataDo.Enabled = True
     Else
@@ -121,7 +84,7 @@ Sub PoWyborzeTypuAktywnosci(oEvent As Object)
         ThisComponent.CurrentController.getControl(cDataDo).Text = &quot;&quot;
     End If
     
-    &apos; B. Czy współautorstwo
+    Dim cUdzial As Object: cUdzial = oForm.getByName(&quot;numUdzial&quot;)
     If bCzyWspol Then
         cUdzial.Enabled = True
     Else
@@ -130,27 +93,26 @@ Sub PoWyborzeTypuAktywnosci(oEvent As Object)
         ThisComponent.CurrentController.getControl(cUdzial).Value = 100.00
     End If
     
-    &apos; C. NOWOŚĆ: Czy dotyczy jej mnożnik projektowy
+    Dim cBonus As Object: cBonus = oForm.getByName(&quot;lstBonus&quot;)
     If bCzyMnoznik Then
         cBonus.Enabled = True
     Else
         cBonus.Enabled = False
         oForm.updateNull(oForm.findColumn(&quot;id_bonusu&quot;))
-        ThisComponent.CurrentController.getControl(cBonus).selectItemPos(0, True) &apos; Ustawia domyślny pusty/pierwszy
+        ThisComponent.CurrentController.getControl(cBonus).selectItemPos(0, True)
     End If
     
-    &apos; D. Wpisanie punktów domyślnych (teraz do Bazowych!)
     If bMaDef And oForm.isNew Then
         oForm.updateDouble(oForm.findColumn(&quot;punkty_bazowe&quot;), dPktDef)
-        ThisComponent.CurrentController.getControl(cPktBazowe).Value = dPktDef
+        ThisComponent.CurrentController.getControl(oForm.getByName(&quot;numPunktyBazowe&quot;)).Value = dPktDef
     End If
     
     PrzeliczPunktyILimity(oEvent)
 End Sub
 
-&apos; =====================================================================
-&apos; AUTOMATYCZNY KALKULATOR MATEMATYCZNY (Na żywo)
-&apos; =====================================================================
+&apos; ---------------------------------------------------------
+&apos; KALKULATOR MATEMATYCZNY
+&apos; ---------------------------------------------------------
 Sub PrzeliczPoZmianiePola(oEvent As Object)
     On Error Resume Next
     oEvent.Source.Model.commit()
@@ -177,97 +139,70 @@ Sub PrzeliczPunktyILimity(Optional oEvent As Object)
     Dim oListBox As Object
     oListBox = oForm.getByName(&quot;lstTypAktywnosci&quot;)
     If IsEmpty(oListBox.SelectedValue) Then Exit Sub
-    Dim iWybraneID As Integer: iWybraneID = CInt(oListBox.SelectedValue)
     
-    &apos; 1. Pobierz bazowe limity i flagę czy_ciagla
-    Dim oConn As Object, oStmt As Object, oResult As Object
-    oConn = oForm.ActiveConnection
-    oStmt = oConn.createStatement()
-
     Dim sSQL As String
     sSQL = &quot;SELECT ka.punkty_min, ka.punkty_max, ta.czy_ciagla &quot; &amp; _
            &quot;FROM pcz_oceny.konfiguracja_aktywnosci ka &quot; &amp; _
            &quot;JOIN pcz_oceny.typy_aktywnosci ta ON ka.id_typu = ta.id_typu &quot; &amp; _
-           &quot;WHERE ka.id_okresu = &quot; &amp; g_WybranyOkresID_v2 &amp; &quot; AND ka.id_typu = &quot; &amp; iWybraneID
+           &quot;WHERE ka.id_okresu = &quot; &amp; PodgladAktywnosci_v2.g_WybranyOkresID_v2 &amp; &quot; AND ka.id_typu = &quot; &amp; CInt(oListBox.SelectedValue)
+           
+    Dim oStmt As Object, oResult As Object
+    oStmt = oForm.ActiveConnection.createStatement()
     oResult = oStmt.executeQuery(sSQL)
     
+    Dim bCzyCiagla As Boolean, bMaMin As Boolean, bMaMax As Boolean
     Dim dPktMin As Double, dPktMax As Double
-    Dim bMaMin As Boolean, bMaMax As Boolean
-    Dim bCzyCiagla As Boolean
     
     If oResult.next() Then
         dPktMin = oResult.getDouble(1): bMaMin = Not oResult.wasNull()
         dPktMax = oResult.getDouble(2): bMaMax = Not oResult.wasNull()
-        bCzyCiagla = oResult.getBoolean(3) &apos; Pobieramy informację, czy to funkcja płatna za czas
+        bCzyCiagla = oResult.getBoolean(3)
     End If
 
-    &apos; 2. Obliczanie Mnożników Czasu i Udziału
     Dim dMnoznikCzasuUdzialu As Double: dMnoznikCzasuUdzialu = 1.0
     
-    &apos; TYLKO jeśli aktywność jest oznaczona w bazie jako &quot;ciągła&quot;, tniemy punkty na dni!
     If bCzyCiagla Then
         Dim dtOd, dtDo
         dtOd = oForm.getDate(oForm.findColumn(&quot;data_rozpoczecia&quot;))
         dtDo = oForm.getDate(oForm.findColumn(&quot;data_zakonczenia&quot;))
-    
         If Not IsEmpty(dtOd) And Not IsEmpty(dtDo) Then
             If dtOd.Year &gt; 0 And dtDo.Year &gt; 0 Then
-                Dim dataPocz As Date, dataKon As Date
-                dataPocz = DateSerial(dtOd.Year, dtOd.Month, dtOd.Day)
-                dataKon = DateSerial(dtDo.Year, dtDo.Month, dtDo.Day)
                 Dim dDni As Double
-                dDni = DateDiff(&quot;d&quot;, dataPocz, dataKon)
+                dDni = DateDiff(&quot;d&quot;, DateSerial(dtOd.Year, dtOd.Month, dtOd.Day), DateSerial(dtDo.Year, dtDo.Month, dtDo.Day))
                 If dDni &gt; 0 Then dMnoznikCzasuUdzialu = dDni / 365.25
             End If
         End If
     End If
 
-    &apos; Udział w projekcie (%) zawsze się liczy
     Dim dUdzial As Double
     dUdzial = oForm.getDouble(oForm.findColumn(&quot;udzial_procentowy&quot;))
     If dUdzial &gt; 0 Then dMnoznikCzasuUdzialu = dMnoznikCzasuUdzialu * (dUdzial / 100.0)
 
-    &apos; 3. NOWOŚĆ: Pobranie Bonusowego Mnożnika z Bazy (Z listy)
     Dim dMnoznikBonusu As Double: dMnoznikBonusu = 1.0
     Dim cBonus As Object
     cBonus = oForm.getByName(&quot;lstBonus&quot;)
-    
     If Not IsEmpty(cBonus.SelectedValue) Then
-        Dim iBonusID As Integer
-        iBonusID = CInt(cBonus.SelectedValue)
-        sSQL = &quot;SELECT mnoznik FROM pcz_oceny.bonusy WHERE id_bonusu = &quot; &amp; iBonusID
+        sSQL = &quot;SELECT mnoznik FROM pcz_oceny.bonusy WHERE id_bonusu = &quot; &amp; CInt(cBonus.SelectedValue)
         oResult = oStmt.executeQuery(sSQL)
-        If oResult.next() Then
-            dMnoznikBonusu = oResult.getDouble(1) &apos; Pobiera z bazy np. 1.5, 3.0 lub 5.0
-        End If
+        If oResult.next() Then dMnoznikBonusu = oResult.getDouble(1)
     End If
 
-    &apos; 4. Aktualizacja informacji o limitach (Z uwzględnieniem matematyki)
-    Dim cInfoMin As Object, cInfoMax As Object, cPunktyOstateczne As Object
-    cInfoMin = oForm.getByName(&quot;txtPunktyMin&quot;)
-    cInfoMax = oForm.getByName(&quot;txtPunktyMax&quot;)
-    cPunktyOstateczne = oForm.getByName(&quot;numPunkty&quot;)
-    
-    &apos; Limity podbijamy tylko o czas/udział, mnożnik bonusu wpływa na WYNIK
-    If bMaMin Then cInfoMin.Text = dPktMin Else cInfoMin.Text = &quot;-&quot;
-    If bMaMax Then cInfoMax.Text = dPktMax Else cInfoMax.Text = &quot;-&quot;
+    Dim cInfoMin As Object: cInfoMin = oForm.getByName(&quot;txtPunktyMin&quot;)
+    Dim cInfoMax As Object: cInfoMax = oForm.getByName(&quot;txtPunktyMax&quot;)
+    If bMaMin Then cInfoMin.Text = CStr(dPktMin) Else cInfoMin.Text = &quot;-&quot;
+    If bMaMax Then cInfoMax.Text = CStr(dPktMax) Else cInfoMax.Text = &quot;-&quot;
 
-    &apos; 5. Finałowe wyliczenie
-    Dim dBazowe As Double
+    Dim dBazowe As Double, dOstateczne As Double
     dBazowe = oForm.getDouble(oForm.findColumn(&quot;punkty_bazowe&quot;))
-    
-    Dim dOstateczne As Double
-    &apos; Formuła: Ostateczne = (Bazowe * MnoznikCzasuUdzialu) * MnoznikZBonusu
-    dOstateczne = (dBazowe * dMnoznikCzasuUdzialu) * dMnoznikBonusu
-    dOstateczne = Int(dOstateczne + 0.5) &apos; Zaokrąglenie do całości
+    dOstateczne = Int(((dBazowe * dMnoznikCzasuUdzialu) * dMnoznikBonusu) + 0.5) 
     
     oForm.updateDouble(oForm.findColumn(&quot;przyznane_punkty&quot;), dOstateczne)
-    ThisComponent.CurrentController.getControl(cPunktyOstateczne).Value = dOstateczne
+    ThisComponent.CurrentController.getControl(oForm.getByName(&quot;numPunkty&quot;)).Value = dOstateczne
 End Sub
 
-&apos; =====================================================================
+&apos; ---------------------------------------------------------
 &apos; ZAPIS I ODŚWIEŻENIE
-&apos; =====================================================================
+&apos; ---------------------------------------------------------
 Sub OdswiezFormularzGlowny()
     Dim oFormsDoc As Object, oPodgladDoc As Object
     oFormsDoc = ThisDatabaseDocument.FormDocuments
@@ -293,7 +228,6 @@ Sub ZapiszIZamknij(oEvent As Object)
     On Error GoTo 0
     
     If oForm.isNew Then oForm.insertRow() Else oForm.updateRow()
-    
     OdswiezFormularzGlowny()
     ThisComponent.CurrentController.Frame.close(True)
 End Sub

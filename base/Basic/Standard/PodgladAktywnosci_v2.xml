@@ -3,21 +3,46 @@
 <script:module xmlns:script="http://openoffice.org/2000/script" script:name="PodgladAktywnosci_v2" script:language="StarBasic" script:moduleType="normal">REM  ***** BASIC  *****
 Option Explicit
 
-&apos; ZMIENNE GLOBALNE W PAMIĘCI RAM
 Global g_WybranyPracownikID_v2 As Integer
 Global g_WybranyOkresID_v2 As Integer
 Global g_WybranaAktywnoscID_v2 As Integer
 Global g_TrybEdytora_v2 As String
 Global g_TrwaOdswiezanie_v2 As Boolean
 
-&apos; Pomocnicza funkcja otwierająca formularz
-Function OtworzFormularz(sNazwa As String) As Object
-    Dim oFormDoc As Object
-    oFormDoc = ThisDatabaseDocument.FormDocuments.getByName(sNazwa)
-    OtworzFormularz = oFormDoc.open()
-End Function
+Sub CzyscFiltryPrzyStarcie(Optional oEvent As Object)
+    g_WybranyPracownikID_v2 = 0
+    g_WybranyOkresID_v2 = 0
+    g_TrwaOdswiezanie_v2 = False
+    
+    If IsMissing(oEvent) Then Exit Sub
+    
+    Dim oForm As Object
+    oForm = oEvent.Source
+    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
 
-&apos; Główna procedura obsługująca OBA filtry (Pracownik i Okres)
+    On Error Resume Next
+    If oForm.hasByName(&quot;lstPracownicy&quot;) Then oForm.getByName(&quot;lstPracownicy&quot;).SelectedValue = Empty
+    If oForm.hasByName(&quot;lstOkresy&quot;) Then oForm.getByName(&quot;lstOkresy&quot;).SelectedValue = Empty
+    On Error GoTo 0
+    
+    If oForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
+        Dim oSubAkt As Object
+        oSubAkt = oForm.getByName(&quot;SubForm_Aktywnosci&quot;)
+        oSubAkt.CommandType = 2
+        oSubAkt.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE 1=0&quot;
+        oSubAkt.reload()
+    End If
+    
+    If oForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
+        Dim oSubPod As Object
+        oSubPod = oForm.getByName(&quot;SubForm_Podsumowanie&quot;)
+        oSubPod.CommandType = 0
+        oSubPod.EscapeProcessing = True
+        oSubPod.Command = &quot;pcz_oceny.v_podsumowanie_struktura&quot;
+        oSubPod.reload()
+    End If
+End Sub
+
 Sub ZmienFiltry(oEvent As Object)
     If g_TrwaOdswiezanie_v2 Then Exit Sub
     g_TrwaOdswiezanie_v2 = True
@@ -29,13 +54,11 @@ Sub ZmienFiltry(oEvent As Object)
     oListPrac = oMainForm.getByName(&quot;lstPracownicy&quot;)
     oListOkr = oMainForm.getByName(&quot;lstOkresy&quot;)
     
-    &apos; Zabezpieczenie przed pustym wyborem
     If IsEmpty(oListPrac.SelectedValue) Or IsEmpty(oListOkr.SelectedValue) Then
         g_TrwaOdswiezanie_v2 = False
         Exit Sub
     End If
     
-    &apos; 1. ZAPIS DO PAMIĘCI RAM
     g_WybranyPracownikID_v2 = CInt(oListPrac.SelectedValue)
     g_WybranyOkresID_v2 = CInt(oListOkr.SelectedValue)
     
@@ -43,21 +66,19 @@ Sub ZmienFiltry(oEvent As Object)
     oConn = oMainForm.ActiveConnection
     oStmt = oConn.createStatement()
     
-    &apos; 2. POBRANIE DAT OKRESU BEZPOŚREDNIO Z BAZY (Omijamy problem podzapytań w Base)
     Dim sDataOd As String, sDataDo As String
     Dim sSQLDaty As String
     sSQLDaty = &quot;SELECT data_od, data_do FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;okresy_oceny&quot;&quot; WHERE &quot;&quot;id_okresu&quot;&quot; = &quot; &amp; g_WybranyOkresID_v2
     
     oRes = oStmt.executeQuery(sSQLDaty)
     If oRes.next() Then
-        sDataOd = oRes.getString(1) &apos; format YYYY-MM-DD
+        sDataOd = oRes.getString(1)
         sDataDo = oRes.getString(2)
     Else
         g_TrwaOdswiezanie_v2 = False
         Exit Sub
     End If
     
-    &apos; 3. ZMIANA SQL BEZPOŚREDNIO W PODFORMULARZU (Czysty SQL, który LO rozumie w 100%)
     Dim oSubAktywnosci As Object
     If oMainForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
         oSubAktywnosci = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
@@ -71,12 +92,11 @@ Sub ZmienFiltry(oEvent As Object)
                &quot; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; &quot; &amp; _
                &quot;ORDER BY ka.&quot;&quot;kolejnosc&quot;&quot; ASC, ap.&quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
         
-        oSubAktywnosci.CommandType = 2 &apos; 2 = SQL Command
+        oSubAktywnosci.CommandType = 2
         oSubAktywnosci.Command = sSQL
         oSubAktywnosci.reload()
     End If
     
-	&apos; 4. ZMIANA SQL DLA PODSUMOWANIA (Bait and Switch!)
     Dim oSubPodsumowanie As Object
     If oMainForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
         oSubPodsumowanie = oMainForm.getByName(&quot;SubForm_Podsumowanie&quot;)
@@ -85,8 +105,8 @@ Sub ZmienFiltry(oEvent As Object)
         sSQL_Podsum = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;f_podsumowanie_wertykalne&quot;&quot;(&quot; &amp; _
                       g_WybranyPracownikID_v2 &amp; &quot;, &quot; &amp; g_WybranyOkresID_v2 &amp; &quot;) ORDER BY &quot;&quot;kolejnosc_sortowania&quot;&quot;&quot;
         
-        oSubPodsumowanie.CommandType = 2 &apos; Przełączamy z Tabeli na SQL Command
-        oSubPodsumowanie.EscapeProcessing = False &apos; WYŁĄCZAMY parser, żeby Base nie spanikował!
+        oSubPodsumowanie.CommandType = 2
+        oSubPodsumowanie.EscapeProcessing = False
         oSubPodsumowanie.Command = sSQL_Podsum
         oSubPodsumowanie.reload()
     End If
@@ -119,11 +139,9 @@ Sub OtworzDoEdycji(oEvent As Object)
     
     g_WybranaAktywnoscID_v2 = oDashSubForm.getInt(oDashSubForm.findColumn(&quot;id_aktywnosci&quot;))
     g_TrybEdytora_v2 = &quot;EDYTUJ&quot;
-    
     OtworzFormularz(&quot;frmEdytorAktywnosci_v2&quot;)
 End Sub
 
-&apos; Procedura Usuwania zostaje Twoja (jest świetna i bezpośrednio uderza w bazę)
 Sub UsunAktywnosc(oEvent As Object)
     Dim oDashSubForm As Object
     Dim iAktywnoscID As Integer
@@ -132,6 +150,7 @@ Sub UsunAktywnosc(oEvent As Object)
     
     oDashSubForm = ThisComponent.DrawPage.Forms.GetByIndex(0).getByName(&quot;SubForm_Aktywnosci&quot;)
     If oDashSubForm.RowCount = 0 Then Exit Sub
+    
     iAktywnoscID = oDashSubForm.getInt(oDashSubForm.findColumn(&quot;id_aktywnosci&quot;))
     
     If MsgBox(&quot;Czy na pewno chcesz usunąć tę aktywność?&quot;, 36, &quot;Potwierdzenie&quot;) = 6 Then
@@ -151,47 +170,9 @@ BladSQL:
     End If
 End Sub
 
-&apos; =====================================================================
-&apos; CZYSZCZENIE RAM I RESET FORMULARZA (Wyzwalacz: Podczas ładowania)
-&apos; =====================================================================
-Sub CzyscFiltryPrzyStarcie(Optional oEvent As Object)
-    &apos; 1. Czyszczenie pamięci RAM (Zabezpiecza przed generowaniem raportu dla starych danych)
-    g_WybranyPracownikID_v2 = 0
-    g_WybranyOkresID_v2 = 0
-    g_TrwaOdswiezanie_v2 = False
-    
-    If IsMissing(oEvent) Then Exit Sub
-    
-    Dim oForm As Object
-    oForm = oEvent.Source
-    
-    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
-
-    &apos; 2. Czyszczenie List Rozwijanych (wizualnie)
-    On Error Resume Next
-    If oForm.hasByName(&quot;lstPracownicy&quot;) Then oForm.getByName(&quot;lstPracownicy&quot;).SelectedValue = Empty
-    If oForm.hasByName(&quot;lstOkresy&quot;) Then oForm.getByName(&quot;lstOkresy&quot;).SelectedValue = Empty
-    On Error GoTo 0
-    
-    &apos; 3. Przywrócenie &quot;ślepego startu&quot; dla głównego Grida
-    If oForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
-        Dim oSubAkt As Object
-        oSubAkt = oForm.getByName(&quot;SubForm_Aktywnosci&quot;)
-        oSubAkt.CommandType = 2
-        oSubAkt.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE 1=0&quot;
-        oSubAkt.reload()
-    End If
-    
-    &apos; 4. Przywrócenie &quot;ślepego startu&quot; dla Grida Podsumowania (Bait and Switch)
-    If oForm.hasByName(&quot;SubForm_Podsumowanie&quot;) Then
-        Dim oSubPod As Object
-        oSubPod = oForm.getByName(&quot;SubForm_Podsumowanie&quot;)
-        
-        &apos; Wracamy do bezpiecznego szkieletu-widoku, by parser się nie denerwował
-        oSubPod.CommandType = 0 &apos; 0 = Tabela/Widok
-        oSubPod.EscapeProcessing = True &apos; Włączamy parser z powrotem
-        oSubPod.Command = &quot;pcz_oceny.v_podsumowanie_struktura&quot;
-        oSubPod.reload()
-    End If
-End Sub
+Function OtworzFormularz(sNazwa As String) As Object
+    Dim oFormDoc As Object
+    oFormDoc = ThisDatabaseDocument.FormDocuments.getByName(sNazwa)
+    OtworzFormularz = oFormDoc.open()
+End Function
 </script:module>
