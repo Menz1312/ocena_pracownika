@@ -548,4 +548,112 @@ Sub Generuj_EdytorAktywnosci_v2()
     oDoc.setModified(True)
     MsgBox &quot;Struktura frmEdytorAktywnosci_v2 wygenerowana pomyślnie!&quot;, 64, &quot;Sukces&quot;
 End Sub
+
+&apos; =====================================================================
+&apos; NOWE FUNKCJE POMOCNICZE DLA FORMULARZY MASTER-DETAIL
+&apos; =====================================================================
+
+Function WstawSubFormZRelacja(oDoc As Object, oMainForm As Object, sNazwa As String, sTabela As String, sMasterField As String, sDetailField As String) As Object
+    Dim oSub As Object
+    oSub = oDoc.createInstance(&quot;com.sun.star.form.component.DataForm&quot;)
+    oSub.Name = sNazwa
+    oSub.CommandType = 0 &apos; 0 = Tabela
+    oSub.Command = sTabela
+    &apos; Ustawienie relacji (Klucz podstawowy z Mastera z Kluczem obcym w Detail)
+    oSub.MasterFields = Array(sMasterField)
+    oSub.DetailFields = Array(sDetailField)
+    oMainForm.insertByIndex(oMainForm.getCount(), oSub)
+    WstawSubFormZRelacja = oSub
+End Function
+
+Sub DodajKolumneGridCheckBox(oGrid As Object, sNazwa As String, sEtykieta As String, sPole As String)
+    Dim oCol As Object
+    oCol = oGrid.createColumn(&quot;CheckBox&quot;)
+    oCol.Name = sNazwa : oCol.Label = sEtykieta : oCol.DataField = sPole
+    oCol.Enabled = False &apos;&lt;-- KLUCZOWA ZMIANA: CheckBoxy używają Enabled zamiast ReadOnly
+    oGrid.insertByIndex(oGrid.getCount(), oCol)
+End Sub
+
+Sub WstawCheckBoxAktywny(oDoc, oForm, sNazwa, sEtykieta, sPole, x, y, w, h)
+    Dim c As Object
+    c = UtworzElement(oDoc, oForm, &quot;CheckBox&quot;, sNazwa, x, y, w, h)
+    c.Label = sEtykieta : c.DataField = sPole
+    c.Enabled = False &apos; Zablokowane domyślnie, odblokuje to AdminLogic!
+End Sub
+
+&apos; Wersje kolumn Edytowalnych (dla bezpośredniej edycji w Gridzie Podformularza)
+Sub DodajKolumneGridEdytowalna(oGrid As Object, sTyp As String, sNazwa As String, sEtykieta As String, sPole As String)
+    Dim oCol As Object
+    oCol = oGrid.createColumn(sTyp)
+    oCol.Name = sNazwa : oCol.Label = sEtykieta : oCol.DataField = sPole
+    oCol.ReadOnly = False &apos; POZWALAMY NA EDYCJĘ!
+    oGrid.insertByIndex(oGrid.getCount(), oCol)
+End Sub
+
+Sub DodajKolumneGridListaEdytowalna(oGrid As Object, sNazwa As String, sEtykieta As String, sPole As String, sSQL As String)
+    Dim oCol As Object
+    oCol = oGrid.createColumn(&quot;ListBox&quot;)
+    oCol.Name = sNazwa : oCol.Label = sEtykieta : oCol.DataField = sPole
+    oCol.ListSourceType = 3 : oCol.ListSource = Array(sSQL) : oCol.BoundColumn = 1
+    oCol.ReadOnly = False &apos; POZWALAMY NA EDYCJĘ!
+    oGrid.insertByIndex(oGrid.getCount(), oCol)
+End Sub
+
+&apos; =====================================================================
+&apos; MASTER-DETAIL: KOMPLEKSOWY ZARZĄDCA TYPÓW I KONFIGURACJI
+&apos; =====================================================================
+Sub GenerujMasterDetail_TypyAktywnosci()
+    Dim oDoc As Object, oMainForm As Object, oSubForm As Object
+    Dim oGridMaster As Object, oGridSub As Object
+    
+    &apos; Nadpisujemy dotychczasowy formularz Typów Aktywności!
+    oDoc = OtworzDoEdycji(&quot;frmAdmin_TypyAktywnosci&quot;)
+    If isNull(oDoc) Then Exit Sub
+    WyczyscFormularz(oDoc)
+    
+    &apos; --- 1. GŁÓWNY FORMULARZ (TYPY AKTYWNOŚCI - BAZA WIEDZY) ---
+    oMainForm = InicjujDataForm(oDoc, &quot;pcz_oceny.typy_aktywnosci&quot;)
+    WstawTytul(oDoc, oMainForm, 10, 5, 200, 8, &quot;ZARZĄDZANIE TYPAMI AKTYWNOŚCI I ICH LIMITAMI&quot;)
+    
+    &apos; Grid Mastera (Do odczytu / nawigacji)
+    oGridMaster = WstawGrid(oDoc, oMainForm, &quot;GridTable&quot;, 10, 15, 260, 40)
+    DodajKolumneGrid(oGridMaster, &quot;TextField&quot;, &quot;nazwa_aktywnosci&quot;, &quot;Nazwa Aktywności&quot;, &quot;nazwa_aktywnosci&quot;)
+    DodajKolumneGridLista(oGridMaster, &quot;id_grupy&quot;, &quot;Grupa&quot;, &quot;id_grupy&quot;, &quot;SELECT kod_grupy, id_grupy FROM pcz_oceny.grupy_dzialan&quot;)
+    DodajKolumneGridCheckBox(oGridMaster, &quot;czy_ciagla&quot;, &quot;Zależna od czasu&quot;, &quot;czy_ciagla&quot;)
+    DodajKolumneGridCheckBox(oGridMaster, &quot;czy_udzial&quot;, &quot;Współautorstwo&quot;, &quot;czy_udzial&quot;)
+    DodajKolumneGridCheckBox(oGridMaster, &quot;czy_mnoznik&quot;, &quot;Bonus B+R&quot;, &quot;czy_mnoznik&quot;)
+    
+    &apos; Standardowy interfejs AdminLogic dla Mastera
+    WstawPrzyciskiAkcji(oDoc, oMainForm, 10, 60)
+    
+    &apos; Szczegóły Mastera (Z prefiksem det_ żeby AdminLogic nimi sterował)
+    WstawPole(oDoc, oMainForm, &quot;TextField&quot;, &quot;det_nazwa&quot;, &quot;Nazwa:&quot;, &quot;nazwa_aktywnosci&quot;, 10, 75, 120, 6)
+    WstawListe(oDoc, oMainForm, &quot;det_grupa&quot;, &quot;Grupa:&quot;, &quot;id_grupy&quot;, &quot;SELECT kod_grupy, id_grupy FROM pcz_oceny.grupy_dzialan&quot;, 180, 75, 50, 6)
+    
+    WstawCheckBoxAktywny(oDoc, oMainForm, &quot;det_czy_ciagla&quot;, &quot;Zależna od czasu (daty)&quot;, &quot;czy_ciagla&quot;, 10, 85, 60, 6)
+    WstawCheckBoxAktywny(oDoc, oMainForm, &quot;det_czy_udzial&quot;, &quot;Współautorstwo (%)&quot;, &quot;czy_udzial&quot;, 80, 85, 60, 6)
+    WstawCheckBoxAktywny(oDoc, oMainForm, &quot;det_czy_mnoznik&quot;, &quot;Bonus finansowy (grant)&quot;, &quot;czy_mnoznik&quot;, 150, 85, 60, 6)
+    
+    PodepnijMakraZdarzen(oMainForm)
+    
+    &apos; --- 2. PODFORMULARZ (KONFIGURACJE W POSZCZEGÓLNYCH OKRESACH) ---
+    WstawTytul(oDoc, oMainForm, 10, 95, 200, 8, &quot;KONFIGURACJA DLA WYBRANEJ AKTYWNOŚCI (Edytuj bezpośrednio w tabeli niżej)&quot;)
+    
+    &apos; Relacja: SubForm widzi tylko te konfiguracje, które mają id_typu równe id_typu z Mastera!
+    oSubForm = WstawSubFormZRelacja(oDoc, oMainForm, &quot;SubForm_Konfiguracja&quot;, &quot;pcz_oceny.konfiguracja_aktywnosci&quot;, &quot;id_typu&quot;, &quot;id_typu&quot;)
+    
+    &apos; Grid SubFormularza - w 100% Edytowalny
+    oGridSub = WstawGrid(oDoc, oSubForm, &quot;GridKonfiguracja&quot;, 10, 105, 260, 60)
+    oGridSub.HasNavigationBar = True &apos; Natywny pasek narzędzi (Dodaj/Usuń wiersz)
+    
+    DodajKolumneGridListaEdytowalna(oGridSub, &quot;id_okresu&quot;, &quot;Okres Oceny&quot;, &quot;id_okresu&quot;, &quot;SELECT nazwa_okresu, id_okresu FROM pcz_oceny.okresy_oceny ORDER BY data_od DESC&quot;)
+    DodajKolumneGridEdytowalna(oGridSub, &quot;TextField&quot;, &quot;lp&quot;, &quot;Lp. Raportu&quot;, &quot;lp&quot;)
+    DodajKolumneGridEdytowalna(oGridSub, &quot;NumericField&quot;, &quot;kolejnosc&quot;, &quot;Kolejność Sort.&quot;, &quot;kolejnosc&quot;)
+    DodajKolumneGridEdytowalna(oGridSub, &quot;NumericField&quot;, &quot;punkty_domyslne&quot;, &quot;Pkt Domyślne&quot;, &quot;punkty_domyslne&quot;)
+    DodajKolumneGridEdytowalna(oGridSub, &quot;NumericField&quot;, &quot;punkty_min&quot;, &quot;Pkt Min&quot;, &quot;punkty_min&quot;)
+    DodajKolumneGridEdytowalna(oGridSub, &quot;NumericField&quot;, &quot;punkty_max&quot;, &quot;Pkt Max&quot;, &quot;punkty_max&quot;)
+    
+    oDoc.setModified(True)
+    MsgBox &quot;Kompleksowy formularz Zarządzania Typami został wygenerowany!&quot;, 64, &quot;Sukces&quot;
+End Sub
 </script:module>
