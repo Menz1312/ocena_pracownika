@@ -674,3 +674,49 @@ SELECT
 	ko.nazwa_oceny AS kom_ocena
 FROM oceny_okresowe oo
 LEFT JOIN skala_ocen ko ON oo.kom_id_oceny = ko.id_oceny;
+
+CREATE OR REPLACE VIEW pcz_oceny.v_podsumowanie_struktura AS 
+SELECT * FROM pcz_oceny.f_podsumowanie_wertykalne(0, 0) 
+WHERE 1=0;
+
+SET search_path TO pcz_oceny;
+
+-- 1. Tworzenie tabeli bonusów (powiązanej z okresem oceny)
+CREATE TABLE bonusy (
+    id_bonusu SERIAL PRIMARY KEY,
+    id_okresu INT NOT NULL REFERENCES okresy_oceny(id_okresu),
+    opis VARCHAR(255) NOT NULL,
+    mnoznik NUMERIC(5,2) NOT NULL DEFAULT 1.00
+);
+
+-- 2. Aktualizacja typów aktywności o flagę sterującą
+ALTER TABLE typy_aktywnosci
+ADD COLUMN czy_mnoznik BOOLEAN DEFAULT FALSE NOT NULL;
+
+-- 3. ZAUTOMATYZOWANE PRZYPISANIE MNOŻNIKA DO GRUPY B+R (id_grupy = 2)
+UPDATE typy_aktywnosci 
+SET czy_mnoznik = TRUE 
+WHERE id_grupy = 2;
+
+-- 4. Aktualizacja głównej tabeli aktywności pracownika
+ALTER TABLE aktywnosci_pracownika
+ADD COLUMN punkty_bazowe NUMERIC(6,2),
+ADD COLUMN id_bonusu INT REFERENCES bonusy(id_bonusu);
+
+-- 5. Migracja starych danych (zabezpieczenie dotychczasowych wpisów)
+UPDATE aktywnosci_pracownika
+SET punkty_bazowe = przyznane_punkty
+WHERE punkty_bazowe IS NULL;
+
+-- Założenie blokady NOT NULL na nowe punkty bazowe
+ALTER TABLE aktywnosci_pracownika
+ALTER COLUMN punkty_bazowe SET NOT NULL;
+
+-- =================================================================
+-- Wypełnienie słownika bonusów (Przykładowe dane dla Okresu nr 1)
+-- =================================================================
+INSERT INTO bonusy (id_okresu, opis, mnoznik) VALUES 
+(1, 'Brak bonusu / Projekt standardowy', 1.00),
+(1, 'Finansowanie ze środków zagranicznych (+50%)', 1.50),
+(1, 'Projekty ramowe UE (+200%)', 3.00),
+(1, 'Europejska Rada ds. Badań Naukowych (ERC) (+400%)', 5.00);
