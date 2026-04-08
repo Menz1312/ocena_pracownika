@@ -36,10 +36,11 @@ Sub GenerujZalacznik1_v2(Optional oEvent As Object)
     oConn = ThisDatabaseDocument.CurrentController.ActiveConnection
     oStatement = oConn.createStatement()
     
-    &apos; 1. DANE NAGŁÓWKOWE
-    sSQL = &quot;SELECT nazwisko || &apos; &apos; || imie, grupa_stanowisk &quot; &amp; _
-           &quot;FROM pcz_oceny.v_szczegoly_wybranego_pracownika &quot; &amp; _
-           &quot;WHERE id_pracownika = &quot; &amp; iPracID
+    &apos; 1. DANE NAGŁÓWKOWE (Pobierane bezpośrednio z tabel, omijając stary widok filtra)
+    sSQL = &quot;SELECT p.&quot;&quot;nazwisko&quot;&quot; || &apos; &apos; || p.&quot;&quot;imie&quot;&quot;, gs.&quot;&quot;nazwa_grupy&quot;&quot; &quot; &amp; _
+           &quot;FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;pracownicy&quot;&quot; p &quot; &amp; _
+           &quot;LEFT JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;grupy_stanowisk&quot;&quot; gs ON p.&quot;&quot;id_grupy_stanowisk&quot;&quot; = gs.&quot;&quot;id_grupy_stanowisk&quot;&quot; &quot; &amp; _
+           &quot;WHERE p.&quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; iPracID
            
     oResultSet = oStatement.executeQuery(sSQL)
     If oResultSet.next() Then
@@ -200,15 +201,17 @@ Sub GenerujOceneOkresowa_v2(Optional oEvent As Object)
            &quot;) &quot; &amp; _
            &quot;SELECT &quot; &amp; _
            &quot;  p.nazwisko || &apos; &apos; || p.imie AS pracownik, p.orcid, p.data_zatrudnienia, &quot; &amp; _
-           &quot;  COALESCE(wd.nazwa_jednostki, &apos;&apos;) || &apos;, &apos; || COALESCE(jo.nazwa_jednostki, &apos;&apos;) AS wydzial_katedra, &quot; &amp; _
-           &quot;  st.nazwa_stopnia, s.nazwa_stanowiska, gs.nazwa_grupy, &quot; &amp; _
+           &quot;  COALESCE(o.arch_jednostka, CASE WHEN wd.id_jednostki IS NOT NULL THEN wd.nazwa_jednostki || &apos;, &apos; || jo.nazwa_jednostki ELSE jo.nazwa_jednostki END) AS wydzial_katedra, &quot; &amp; _
+           &quot;  COALESCE(o.arch_stopien, st.nazwa_stopnia) AS nazwa_stopnia, &quot; &amp; _
+           &quot;  COALESCE(o.arch_stanowisko, s.nazwa_stanowiska) AS nazwa_stanowiska, &quot; &amp; _
+           &quot;  COALESCE(o.arch_grupa_stanowisk, gs.nazwa_grupy) AS nazwa_grupy, &quot; &amp; _
            &quot;  oo.data_od, oo.data_do, &quot; &amp; _
            &quot;  o.suma_pkt_pub, o.suma_pkt_dyd, o.suma_pkt_org, o.suma_pkt_br, o.suma_pkt_total, &quot; &amp; _
            &quot;  o.kier_id_roli, op.nazwa_oceny, od.nazwa_oceny, org.nazwa_oceny, ob.nazwa_oceny, ot.nazwa_oceny, &quot; &amp; _
            &quot;  o.kier_uzasadnienie_punktow, o.kier_uzasadnienie_oceny, o.kier_zatwierdzil_data, &quot; &amp; _
            &quot;  o.kom_id_oceny, o.kom_uzasadnienie, o.kom_wniosek_zatrudnienie, o.kom_zatwierdzil_data, &quot; &amp; _
            &quot;  o.odw_id_decyzji, o.odw_uzasadnienie, o.odw_zatwierdzil_data, &quot; &amp; _
-           &quot;  dysc.dysc_sklejone, we.opis_etatu, funkcje.funk_kier, poprzednia.poprz_ocena &quot; &amp; _
+           &quot;  dysc.dysc_sklejone, COALESCE(o.arch_wymiar_etatu, we.opis_etatu) AS opis_etatu, funkcje.funk_kier, poprzednia.poprz_ocena &quot; &amp; _
            &quot;FROM pcz_oceny.pracownicy p &quot; &amp; _
            &quot;JOIN pcz_oceny.okresy_oceny oo ON oo.id_okresu = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
            &quot;JOIN pcz_oceny.oceny_okresowe o ON o.id_pracownika = p.id_pracownika AND o.id_okresu = oo.id_okresu &quot; &amp; _
@@ -348,7 +351,7 @@ Sub GenerujOceneOkresowa_v2(Optional oEvent As Object)
         
         WstawDoZakladki(oDoc, &quot;bmkOdwUzas&quot;, oResultSet.getString(29))
         If oResultSet.getString(30) &lt;&gt; &quot;&quot; Then WstawDoZakladki(oDoc, &quot;bmkOdwData&quot;, Format(CDateFromIso(Left(oResultSet.getString(30), 10)), &quot;DD.MM.YYYY&quot;))
-    End If
+    	End If
     
     MsgBox &quot;Dokument Oceny Okresowej (Załącznik nr 2) został pomyślnie wygenerowany!&quot;, 64, &quot;Sukces&quot;
 End Sub

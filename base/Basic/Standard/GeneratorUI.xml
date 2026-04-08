@@ -70,7 +70,7 @@ Sub ZbudujFormularzDeklaracji_Automatycznie()
     oModel.Dropdown = True : oModel.BoundColumn = 1
     
     UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblUdzial1&quot;, 140, 40, 20, 6).Label = &quot;Udział %:&quot;
-    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;txtUdzial1&quot;, 165, 40, 20, 6)
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;numUdzial1&quot;, 165, 40, 20, 6)
     oModel.ValueMin = 0 : oModel.ValueMax = 100 : oModel.DecimalAccuracy = 2 : oModel.Spin = True
     
     oModel = UtworzKontrolke(oDoc, oSubForm, &quot;RadioButton&quot;, &quot;optWiodaca1&quot;, 190, 40, 30, 6)
@@ -83,7 +83,7 @@ Sub ZbudujFormularzDeklaracji_Automatycznie()
     oModel.Dropdown = True : oModel.BoundColumn = 1
     
     UtworzKontrolke(oDoc, oSubForm, &quot;FixedText&quot;, &quot;lblUdzial2&quot;, 140, 50, 20, 6).Label = &quot;Udział %:&quot;
-    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;txtUdzial2&quot;, 165, 50, 20, 6)
+    oModel = UtworzKontrolke(oDoc, oSubForm, &quot;NumericField&quot;, &quot;numUdzial2&quot;, 165, 50, 20, 6)
     oModel.ValueMin = 0 : oModel.ValueMax = 100 : oModel.DecimalAccuracy = 2 : oModel.Spin = True
     
     oModel = UtworzKontrolke(oDoc, oSubForm, &quot;RadioButton&quot;, &quot;optWiodaca2&quot;, 190, 50, 30, 6)
@@ -108,7 +108,7 @@ Sub ZbudujFormularzDeklaracji_Automatycznie()
     BindMakro_Formularz(oSubForm, &quot;com.sun.star.sdbc.XRowSetListener&quot;, &quot;cursorMoved&quot;, &quot;Deklaracje_PoZmianieRekordu&quot;)
     
     &apos; Przeliczanie udziałów
-    BindMakro_Kontrolka(oSubForm, &quot;txtUdzial1&quot;, &quot;com.sun.star.awt.XTextListener&quot;, &quot;textChanged&quot;, &quot;Deklaracje_PrzeliczUdzial&quot;)
+    BindMakro_Kontrolka(oSubForm, &quot;numUdzial1&quot;, &quot;com.sun.star.awt.XTextListener&quot;, &quot;textChanged&quot;, &quot;Deklaracje_PrzeliczUdzial&quot;)
     
     &apos; Zapis i edycja (ActionPerformed)
     BindMakro_Kontrolka(oSubForm, &quot;btnZatwierdz&quot;, &quot;com.sun.star.awt.XActionListener&quot;, &quot;actionPerformed&quot;, &quot;Deklaracje_Zapisz&quot;)

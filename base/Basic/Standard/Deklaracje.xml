@@ -71,11 +71,11 @@ Sub Deklaracje_WczytajDane(oForm As Object)
         
         If iCount = 1 Then
             UstawListBox(oForm.getByName(&quot;lstDysc1&quot;), CStr(oRes.getInt(1)))
-            oForm.getByName(&quot;txtUdzial1&quot;).Value = oRes.getDouble(2)
+            oForm.getByName(&quot;numUdzial1&quot;).Value = oRes.getDouble(2)
             If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca1&quot;).State = 1
         ElseIf iCount = 2 Then
             UstawListBox(oForm.getByName(&quot;lstDysc2&quot;), CStr(oRes.getInt(1)))
-            oForm.getByName(&quot;txtUdzial2&quot;).Value = oRes.getDouble(2)
+            oForm.getByName(&quot;numUdzial2&quot;).Value = oRes.getDouble(2)
             If oRes.getBoolean(3) Then oForm.getByName(&quot;optWiodaca2&quot;).State = 1
         End If
     Wend
@@ -97,10 +97,10 @@ Sub Deklaracje_PrzeliczUdzial(oEvent As Object)
     oSourceCtrl = oEvent.Source.Model
     oForm = oSourceCtrl.Parent
     
-    If oSourceCtrl.Name = &quot;txtUdzial1&quot; Then
-        oTargetCtrl = oForm.getByName(&quot;txtUdzial2&quot;)
-    ElseIf oSourceCtrl.Name = &quot;txtUdzial2&quot; Then
-        oTargetCtrl = oForm.getByName(&quot;txtUdzial1&quot;)
+    If oSourceCtrl.Name = &quot;numUdzial1&quot; Then
+        oTargetCtrl = oForm.getByName(&quot;numUdzial2&quot;)
+    ElseIf oSourceCtrl.Name = &quot;numUdzial2&quot; Then
+        oTargetCtrl = oForm.getByName(&quot;numUdzial1&quot;)
     Else
         GoTo ZdejmijBlokade
     End If
@@ -155,8 +155,8 @@ Sub Deklaracje_Zapisz(oEvent As Object)
 
     sDysc1 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc1&quot;))
     sDysc2 = PobierzWartoscListBox(oForm.getByName(&quot;lstDysc2&quot;))
-    dUdzial1 = oForm.getByName(&quot;txtUdzial1&quot;).Value
-    dUdzial2 = oForm.getByName(&quot;txtUdzial2&quot;).Value
+    dUdzial1 = oForm.getByName(&quot;numUdzial1&quot;).Value
+    dUdzial2 = oForm.getByName(&quot;numUdzial2&quot;).Value
     bWiodaca1 = (oForm.getByName(&quot;optWiodaca1&quot;).State = 1)
     bWiodaca2 = (oForm.getByName(&quot;optWiodaca2&quot;).State = 1)
     
@@ -190,8 +190,8 @@ End Sub
 Sub Deklaracje_WyczyscKontrolki(oForm As Object)
     oForm.getByName(&quot;lstDysc1&quot;).SelectedItems = Array()
     oForm.getByName(&quot;lstDysc2&quot;).SelectedItems = Array()
-    oForm.getByName(&quot;txtUdzial1&quot;).Value = 100.00
-    oForm.getByName(&quot;txtUdzial2&quot;).Value = 0.00
+    oForm.getByName(&quot;numUdzial1&quot;).Value = 100.00
+    oForm.getByName(&quot;numUdzial2&quot;).Value = 0.00
     oForm.getByName(&quot;optWiodaca1&quot;).State = 1 
     oForm.getByName(&quot;optWiodaca2&quot;).State = 0
 End Sub
@@ -199,8 +199,8 @@ End Sub
 Sub Deklaracje_ZablokujInterfejs(oForm As Object, bZablokuj As Boolean)
     oForm.getByName(&quot;lstDysc1&quot;).Enabled = Not bZablokuj
     oForm.getByName(&quot;lstDysc2&quot;).Enabled = Not bZablokuj
-    oForm.getByName(&quot;txtUdzial1&quot;).Enabled = Not bZablokuj
-    oForm.getByName(&quot;txtUdzial2&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;numUdzial1&quot;).Enabled = Not bZablokuj
+    oForm.getByName(&quot;numUdzial2&quot;).Enabled = Not bZablokuj
     oForm.getByName(&quot;optWiodaca1&quot;).Enabled = Not bZablokuj
     oForm.getByName(&quot;optWiodaca2&quot;).Enabled = Not bZablokuj
     oForm.getByName(&quot;btnZatwierdz&quot;).Enabled = Not bZablokuj

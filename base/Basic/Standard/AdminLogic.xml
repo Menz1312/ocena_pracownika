@@ -13,23 +13,18 @@ Sub Admin_UstawStan(oForm As Object, bTrybEdycji As Boolean)
         oElement = oForm.getByIndex(i)
         
         &apos; Kontrolki detali (zawsze z prefiksem det_)
-        If Left(oElement.Name, 4) = &quot;det_&quot; Then
-            oElement.Enabled = bTrybEdycji
-        End If
+        If Left(oElement.Name, 4) = &quot;det_&quot; Then oElement.Enabled = bTrybEdycji
         
         &apos; Grid (w trybie edycji blokujemy nawigację, żeby użytkownik nie uciekł)
-        If oElement.Name = &quot;GridTable&quot; Then
-            oElement.Enabled = Not bTrybEdycji
-        End If
+        If oElement.Name = &quot;GridTable&quot; Then oElement.Enabled = Not bTrybEdycji
         
         &apos; Przyciski akcji
-        If oElement.Name = &quot;btnDodaj&quot; Or oElement.Name = &quot;btnEdytuj&quot; Or oElement.Name = &quot;btnUsun&quot; Then
-            oElement.Enabled = Not bTrybEdycji
-        End If
-        If oElement.Name = &quot;btnZapisz&quot; Or oElement.Name = &quot;btnAnuluj&quot; Then
-            oElement.Enabled = bTrybEdycji
-        End If
+        If oElement.Name = &quot;btnDodaj&quot; Or oElement.Name = &quot;btnEdytuj&quot; Or oElement.Name = &quot;btnUsun&quot; Then oElement.Enabled = Not bTrybEdycji
+        If oElement.Name = &quot;btnZapisz&quot; Or oElement.Name = &quot;btnAnuluj&quot; Then oElement.Enabled = bTrybEdycji
     Next i
+
+    oForm.AllowInserts = bTrybEdycji
+    oForm.AllowUpdates = bTrybEdycji
 End Sub
 
 &apos; 1. Nawigacja - gdy zmieni się rekord, blokujemy edycję
@@ -87,7 +82,6 @@ Sub Admin_Zapisz(oEvent As Object)
     Dim oForm As Object
     oForm = oEvent.Source.Model.Parent
     
-    &apos; Tarcza anty-fokusowa
     On Error Resume Next
     ThisComponent.CurrentController.getControl(oEvent.Source.Model).setFocus()
     On Error GoTo 0
@@ -95,10 +89,15 @@ Sub Admin_Zapisz(oEvent As Object)
     If oForm.isNew Then
         oForm.insertRow()
     Else
-        oForm.updateRow()
+        If oForm.isModified Then oForm.updateRow()
     End If
     
     Admin_UstawStan(oForm, False)
+    
+    If oForm.hasByName(&quot;SubForm_Konfiguracja&quot;) Then
+        oForm.getByName(&quot;SubForm_Konfiguracja&quot;).reload()
+    End If
+    
     oForm.reload()
 End Sub
 
@@ -109,7 +108,9 @@ Sub Admin_Usun(oEvent As Object)
     If oForm.isAfterLast Or oForm.isBeforeFirst Or oForm.RowCount = 0 Then Exit Sub
     
     If MsgBox(&quot;Czy na pewno chcesz usunąć ten rekord z bazy?&quot;, 36, &quot;Potwierdzenie usunięcia&quot;) = 6 Then
-        oForm.deleteRow()
+        oForm.AllowDeletes = True   &apos;&lt;-- Odblokowujemy uprawnienia na ułamek sekundy
+        oForm.deleteRow()           &apos;&lt;-- Wykonujemy usunięcie
+        oForm.AllowDeletes = False  &apos;&lt;-- Od razu ponownie zakładamy blokadę
         oForm.reload()
     End If
 End Sub

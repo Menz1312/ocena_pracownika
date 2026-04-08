@@ -18,13 +18,27 @@ Sub UstawStanInterfejsu(oForm As Object, bOdblokuj As Boolean)
     Dim i As Integer, oElement As Object
     For i = 0 To oForm.Count - 1
         oElement = oForm.getByIndex(i)
-        If Left(oElement.Name, 4) = &quot;txt_&quot; Or Left(oElement.Name, 4) = &quot;lst_&quot; Or Left(oElement.Name, 4) = &quot;num_&quot; Then
+        
+        &apos; Niezawodne sprawdzanie po TYPIE kontrolki, a nie po nazwie!
+        If oElement.supportsService(&quot;com.sun.star.form.component.TextField&quot;) Or _
+           oElement.supportsService(&quot;com.sun.star.form.component.ListBox&quot;) Or _
+           oElement.supportsService(&quot;com.sun.star.form.component.NumericField&quot;) Then
             oElement.Enabled = bOdblokuj
         End If
+        
+        &apos; Przycisk zatwierdzania blokujemy osobno po nazwie
         If oElement.Name = &quot;btnZatwierdz&quot; Then
             oElement.Enabled = bOdblokuj
         End If
     Next i
+End Sub
+
+Sub OdblokujEdycje(oEvent As Object)
+    Dim oForm As Object: oForm = oEvent.Source.Model.Parent
+    bTrybWymuszonejEdycji = True 
+    oForm.AllowUpdates = True
+    oForm.reload() 
+    MsgBox &quot;Tryb edycji włączony. Możesz wprowadzić zmiany.&quot;, 64, &quot;Edycja odblokowana&quot;
 End Sub
 
 &apos; =====================================================================
@@ -36,8 +50,18 @@ Sub Kierownik_CzyscFiltryPrzyStarcie(Optional oEvent As Object)
     PodgladAktywnosci_v2.g_TrwaOdswiezanie_v2 = False
     
     If IsMissing(oEvent) Then Exit Sub
-    Dim oForm As Object: oForm = oEvent.Source
-    If oForm.ImplementationName &lt;&gt; &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then Exit Sub
+    
+    &apos; Zmiana: Elastyczne rozpoznawanie formularza (działa dla zdarzeń Formularza i Kontrolek)
+    Dim oForm As Object
+    If oEvent.Source.ImplementationName = &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then
+        oForm = oEvent.Source
+    Else
+        On Error Resume Next
+        oForm = oEvent.Source.Model.Parent
+        On Error GoTo 0
+    End If
+    
+    If IsNull(oForm) Or IsEmpty(oForm) Then Exit Sub
 
     On Error Resume Next
     If oForm.hasByName(&quot;lstPracownik&quot;) Then oForm.getByName(&quot;lstPracownik&quot;).SelectedValue = Empty
@@ -123,12 +147,13 @@ Sub Kierownik_ZmienFiltry_v2(oEvent As Object)
         oSubDecyzje.first()
     End If
 
-    If oMainForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
-        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
-        sSQL = &quot;SELECT ap.*, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
+    If oMainForm.hasByName(&quot;SubForm_PodgladAktywnosci&quot;) Then
+        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_PodgladAktywnosci&quot;)
+        sSQL = &quot;SELECT ap.*, gd.&quot;&quot;kod_grupy&quot;&quot;, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
                &quot;FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; ap &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;typy_aktywnosci&quot;&quot; ta ON ap.&quot;&quot;id_typu_aktywnosci&quot;&quot; = ta.&quot;&quot;id_typu&quot;&quot; &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;konfiguracja_aktywnosci&quot;&quot; ka ON ta.&quot;&quot;id_typu&quot;&quot; = ka.&quot;&quot;id_typu&quot;&quot; AND ka.&quot;&quot;id_okresu&quot;&quot; = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+				&quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;grupy_dzialan&quot;&quot; gd ON ta.&quot;&quot;id_grupy&quot;&quot; = gd.&quot;&quot;id_grupy&quot;&quot; &quot; &amp; _
                &quot;WHERE ap.&quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; iPracID &amp; &quot; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; &quot; &amp; _
                &quot;ORDER BY ka.&quot;&quot;kolejnosc&quot;&quot; ASC, ap.&quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
         oSubAkt.CommandType = 2
@@ -147,6 +172,7 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
     If oForm.isNew Then oForm.insertRow() Else oForm.updateRow()
     On Error GoTo 0
     
+    &apos; Pobranie informacji o pracowniku i okresie ze zmiennych globalnych
     Dim iPracID As Integer: iPracID = PodgladAktywnosci_v2.g_WybranyPracownikID_v2
     Dim iOkrID As Integer: iOkrID = PodgladAktywnosci_v2.g_WybranyOkresID_v2
     
@@ -155,20 +181,50 @@ Sub ZatwierdzOceneKierownika(oEvent As Object)
     
     Dim oStmt As Object: oStmt = oForm.ActiveConnection.createStatement()
     Dim sSQL As String
-    
-    sSQL = &quot;UPDATE pcz_oceny.oceny_okresowe SET &quot; &amp; _
-           &quot;suma_pkt_pub = (SELECT uzyskane FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) WHERE kolejnosc_sortowania = 1), &quot; &amp; _
-           &quot;suma_pkt_dyd = (SELECT uzyskane FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) WHERE kolejnosc_sortowania = 2), &quot; &amp; _
-           &quot;suma_pkt_org = (SELECT uzyskane FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) WHERE kolejnosc_sortowania = 3), &quot; &amp; _
-           &quot;suma_pkt_br = (SELECT uzyskane FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) WHERE kolejnosc_sortowania = 4), &quot; &amp; _
-           &quot;suma_pkt_total = (SELECT uzyskane FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) WHERE kolejnosc_sortowania = 999), &quot; &amp; _
-           &quot;kier_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
-           &quot;kier_zatwierdzil_data = CURRENT_TIMESTAMP &quot; &amp; _
+    &apos; Archiwizacja danych pracownika + bezpieczne przeliczenie punktów
+    sSQL = &quot;WITH punkty AS ( &quot; &amp; _
+           &quot;  SELECT &quot; &amp; _
+           &quot;    MAX(CASE WHEN kolejnosc_sortowania = 1 THEN uzyskane ELSE 0 END) AS pkt_pub, &quot; &amp; _
+           &quot;    MAX(CASE WHEN kolejnosc_sortowania = 2 THEN uzyskane ELSE 0 END) AS pkt_dyd, &quot; &amp; _
+           &quot;    MAX(CASE WHEN kolejnosc_sortowania = 3 THEN uzyskane ELSE 0 END) AS pkt_org, &quot; &amp; _
+           &quot;    MAX(CASE WHEN kolejnosc_sortowania = 4 THEN uzyskane ELSE 0 END) AS pkt_br, &quot; &amp; _
+           &quot;    MAX(CASE WHEN kolejnosc_sortowania = 999 THEN uzyskane ELSE 0 END) AS pkt_total &quot; &amp; _
+           &quot;  FROM pcz_oceny.f_podsumowanie_wertykalne(&quot; &amp; iPracID &amp; &quot;, &quot; &amp; iOkrID &amp; &quot;) &quot; &amp; _
+           &quot;), dane_arch AS ( &quot; &amp; _
+           &quot;  SELECT st.nazwa_stopnia AS arch_stopien, s.nazwa_stanowiska AS arch_stanowisko, &quot; &amp; _
+           &quot;         CASE WHEN wd.id_jednostki IS NOT NULL THEN wd.nazwa_jednostki || &apos;, &apos; || jo.nazwa_jednostki ELSE jo.nazwa_jednostki END AS arch_jednostka, &quot; &amp; _
+           &quot;         we.opis_etatu AS arch_wymiar_etatu, &quot; &amp; _
+           &quot;         gs.nazwa_grupy AS arch_grupa_stanowisk &quot; &amp; _
+           &quot;  FROM pcz_oceny.pracownicy p &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.stopnie_tytuly st ON p.id_stopnia = st.id_stopnia &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.stanowiska s ON p.id_stanowiska = s.id_stanowiska &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.jednostki_organizacyjne jo ON p.id_jednostki = jo.id_jednostki &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.jednostki_organizacyjne wd ON jo.id_jednostki_nadrzednej = wd.id_jednostki &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.wymiar_etatu we ON p.id_etatu = we.id_etatu &quot; &amp; _
+           &quot;  LEFT JOIN pcz_oceny.grupy_stanowisk gs ON p.id_grupy_stanowisk = gs.id_grupy_stanowisk &quot; &amp; _
+           &quot;  WHERE p.id_pracownika = &quot; &amp; iPracID &amp; &quot; &quot; &amp; _
+           &quot;) &quot; &amp; _
+           &quot;UPDATE pcz_oceny.oceny_okresowe &quot; &amp; _
+           &quot;SET kier_zatwierdzil_user = CURRENT_USER, &quot; &amp; _
+           &quot;    kier_zatwierdzil_data = CURRENT_TIMESTAMP, &quot; &amp; _
+           &quot;    kier_data_oceny = CURRENT_DATE, &quot; &amp; _
+           &quot;    suma_pkt_pub = p.pkt_pub, &quot; &amp; _
+           &quot;    suma_pkt_dyd = p.pkt_dyd, &quot; &amp; _
+           &quot;    suma_pkt_org = p.pkt_org, &quot; &amp; _
+           &quot;    suma_pkt_br  = p.pkt_br, &quot; &amp; _
+           &quot;    suma_pkt_total = p.pkt_total, &quot; &amp; _
+           &quot;    arch_stopien = d.arch_stopien, &quot; &amp; _
+           &quot;    arch_stanowisko = d.arch_stanowisko, &quot; &amp; _
+           &quot;    arch_jednostka = d.arch_jednostka, &quot; &amp; _
+           &quot;    arch_wymiar_etatu = d.arch_wymiar_etatu, &quot; &amp; _
+           &quot;    arch_grupa_stanowisk = d.arch_grupa_stanowisk &quot; &amp; _
+           &quot;FROM punkty p, dane_arch d &quot; &amp; _
            &quot;WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkrID
 
     oStmt.executeUpdate(sSQL)
-    MsgBox &quot;Oceny zostały pomyślnie zapisane i zatwierdzone w bazie.&quot;, 64, &quot;Sukces&quot;
+    MsgBox &quot;Oceny zostały pomyślnie zapisane, a dane archiwalne pracownika zabezpieczone.&quot;, 64, &quot;Sukces&quot;
     
+    &apos; Przeładowanie formularza i ustawienie stanu interfejsu na podgląd
     oForm.reload()
     oForm.first()
     bTrybWymuszonejEdycji = False
@@ -179,7 +235,39 @@ End Sub
 &apos; KOMISJA
 &apos; =====================================================================
 Sub Komisja_CzyscFiltryPrzyStarcie(Optional oEvent As Object)
-    Kierownik_CzyscFiltryPrzyStarcie(oEvent) &apos; Logika czyszczenia jest identyczna
+    Kierownik_CzyscFiltryPrzyStarcie(oEvent)
+    
+    If Not IsMissing(oEvent) Then
+        Dim oForm As Object
+        
+        &apos; Inteligentne rozpoznawanie formularza
+        If oEvent.Source.ImplementationName = &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then
+            oForm = oEvent.Source
+        Else
+            On Error Resume Next
+            oForm = oEvent.Source.Model.Parent
+            On Error GoTo 0
+        End If
+        
+        If IsNull(oForm) Or IsEmpty(oForm) Then Exit Sub
+
+        &apos; Czyszczenie podglądu ocen
+        If oForm.hasByName(&quot;SubForm_PodgladOcen&quot;) Then
+            Dim oSubPodOcen As Object: oSubPodOcen = oForm.getByName(&quot;SubForm_PodgladOcen&quot;)
+            oSubPodOcen.Filter = &quot;&quot;: oSubPodOcen.CommandType = 2
+            oSubPodOcen.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;oceny_okresowe&quot;&quot; WHERE 1=0&quot;
+            oSubPodOcen.reload()
+        End If
+        
+        &apos; Czyszczenie podglądu aktywności
+        If oForm.hasByName(&quot;SubForm_PodgladAktywnosci&quot;) Then
+            Dim oSubAkt As Object: oSubAkt = oForm.getByName(&quot;SubForm_PodgladAktywnosci&quot;)
+            oSubAkt.Filter = &quot;&quot;
+            oSubAkt.CommandType = 2
+            oSubAkt.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE 1=0&quot;
+            oSubAkt.reload()
+        End If
+    End If
 End Sub
 
 Sub Komisja_ZmienFiltry_v2(oEvent As Object)
@@ -199,9 +287,25 @@ Sub Komisja_ZmienFiltry_v2(oEvent As Object)
 
     Dim oStmt As Object: oStmt = oMainForm.ActiveConnection.createStatement()
     Dim sDataOd As String, sDataDo As String, sSQL As String
+    Dim oRes As Object
+    
+    &apos; Blokada przepływu, jeśli Kierownik nie ocenił pracownika
+    Dim bKierownikOcenil As Boolean: bKierownikOcenil = False
+    sSQL = &quot;SELECT kier_zatwierdzil_user FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkrID
+    oRes = oStmt.executeQuery(sSQL) &apos; Używamy zmiennej
+    If oRes.next() Then
+        If Not oRes.wasNull() And oRes.getString(1) &lt;&gt; &quot;&quot; Then bKierownikOcenil = True
+    End If
+    
+    If Not bKierownikOcenil Then
+        MsgBox &quot;Wybrany pracownik nie posiada jeszcze zatwierdzonej oceny od Kierownika za ten okres! Wymagane jest zakończenie etapu I.&quot;, 48, &quot;Brak oceny Kierownika&quot;
+        PodgladAktywnosci_v2.g_TrwaOdswiezanie_v2 = False
+        Komisja_CzyscFiltryPrzyStarcie(oEvent)
+        Exit Sub
+    End If
     
     sSQL = &quot;SELECT data_od, data_do FROM pcz_oceny.okresy_oceny WHERE id_okresu = &quot; &amp; iOkrID
-    Dim oRes As Object: oRes = oStmt.executeQuery(sSQL)
+    oRes = oStmt.executeQuery(sSQL) &apos; Używamy zmiennej (usunięto stary Dim)
     If oRes.next() Then
         sDataOd = oRes.getString(1): sDataDo = oRes.getString(2)
     End If
@@ -213,7 +317,7 @@ Sub Komisja_ZmienFiltry_v2(oEvent As Object)
 
     Dim bCzyOceniony As Boolean: bCzyOceniony = False
     sSQL = &quot;SELECT kom_zatwierdzil_user FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkrID
-    oRes = oStmt.executeQuery(sSQL)
+    oRes = oStmt.executeQuery(sSQL) &apos; Używamy zmiennej
     If oRes.next() Then
         If Not oRes.wasNull() And oRes.getString(1) &lt;&gt; &quot;&quot; Then bCzyOceniony = True
     End If
@@ -240,6 +344,17 @@ Sub Komisja_ZmienFiltry_v2(oEvent As Object)
         oSubPod.reload()
     End If
 
+    If oMainForm.hasByName(&quot;SubForm_PodgladOcen&quot;) Then
+        Dim oSubPodOcen As Object: oSubPodOcen = oMainForm.getByName(&quot;SubForm_PodgladOcen&quot;)
+        oSubPodOcen.Filter = &quot;&quot;: oSubPodOcen.ApplyFilter = False
+        oSubPodOcen.CommandType = 2: oSubPodOcen.EscapeProcessing = True
+        &apos; Ładujemy cały rekord z ocenami dla pracownika i okresu
+        sSQL = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;oceny_okresowe&quot;&quot; WHERE &quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; iPracID &amp; &quot; AND &quot;&quot;id_okresu&quot;&quot; = &quot; &amp; iOkrID
+        oSubPodOcen.Command = sSQL
+        oSubPodOcen.reload()
+        oSubPodOcen.first()
+    End If
+
     If oMainForm.hasByName(&quot;SubForm_Decyzje&quot;) Then
         Dim oSubDecyzje As Object: oSubDecyzje = oMainForm.getByName(&quot;SubForm_Decyzje&quot;)
         oSubDecyzje.Filter = &quot;&quot;: oSubDecyzje.ApplyFilter = False
@@ -250,12 +365,13 @@ Sub Komisja_ZmienFiltry_v2(oEvent As Object)
         oSubDecyzje.first()
     End If
 
-    If oMainForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
-        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
-        sSQL = &quot;SELECT ap.*, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
+    If oMainForm.hasByName(&quot;SubForm_PodgladAktywnosci&quot;) Then
+        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_PodgladAktywnosci&quot;)
+        sSQL = &quot;SELECT ap.*, gd.&quot;&quot;kod_grupy&quot;&quot;, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
                &quot;FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; ap &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;typy_aktywnosci&quot;&quot; ta ON ap.&quot;&quot;id_typu_aktywnosci&quot;&quot; = ta.&quot;&quot;id_typu&quot;&quot; &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;konfiguracja_aktywnosci&quot;&quot; ka ON ta.&quot;&quot;id_typu&quot;&quot; = ka.&quot;&quot;id_typu&quot;&quot; AND ka.&quot;&quot;id_okresu&quot;&quot; = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;grupy_dzialan&quot;&quot; gd ON ta.&quot;&quot;id_grupy&quot;&quot; = gd.&quot;&quot;id_grupy&quot;&quot; &quot; &amp; _
                &quot;WHERE ap.&quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; iPracID &amp; &quot; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; &quot; &amp; _
                &quot;ORDER BY ka.&quot;&quot;kolejnosc&quot;&quot; ASC, ap.&quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
         oSubAkt.CommandType = 2
@@ -295,18 +411,38 @@ Sub ZatwierdzOceneKomisji(oEvent As Object)
 End Sub
 
 &apos; =====================================================================
-&apos; ODWOŁANIE (REKTOR)
+&apos; ODWOŁANIE
 &apos; =====================================================================
 Sub Odwolanie_CzyscFiltryPrzyStarcie(Optional oEvent As Object)
     Kierownik_CzyscFiltryPrzyStarcie(oEvent)
     
     If Not IsMissing(oEvent) Then
-        Dim oForm As Object: oForm = oEvent.Source
+        Dim oForm As Object
+        
+        &apos; Inteligentne rozpoznawanie formularza
+        If oEvent.Source.ImplementationName = &quot;com.sun.star.comp.forms.ODatabaseForm&quot; Then
+            oForm = oEvent.Source
+        Else
+            On Error Resume Next
+            oForm = oEvent.Source.Model.Parent
+            On Error GoTo 0
+        End If
+        
+        If IsNull(oForm) Or IsEmpty(oForm) Then Exit Sub
+
         If oForm.hasByName(&quot;SubForm_PodgladOcen&quot;) Then
             Dim oSubPodOcen As Object: oSubPodOcen = oForm.getByName(&quot;SubForm_PodgladOcen&quot;)
             oSubPodOcen.Filter = &quot;&quot;: oSubPodOcen.CommandType = 2
-            oSubPodOcen.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;oceny_okresowe&quot;&quot; WHERE 1=0&quot;
+			oSubPodOcen.Command = &quot;SELECT o.*, sk.&quot;&quot;nazwa_oceny&quot;&quot; AS &quot;&quot;kom_ocena&quot;&quot; FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;oceny_okresowe&quot;&quot; o LEFT JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;skala_ocen&quot;&quot; sk ON o.&quot;&quot;kom_id_oceny&quot;&quot; = sk.&quot;&quot;id_oceny&quot;&quot; WHERE 1=0&quot;
             oSubPodOcen.reload()
+        End If
+        
+        If oForm.hasByName(&quot;SubForm_PodgladAktywnosci&quot;) Then
+            Dim oSubAkt As Object: oSubAkt = oForm.getByName(&quot;SubForm_PodgladAktywnosci&quot;)
+            oSubAkt.Filter = &quot;&quot;
+            oSubAkt.CommandType = 2
+            oSubAkt.Command = &quot;SELECT * FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; WHERE 1=0&quot;
+            oSubAkt.reload()
         End If
     End If
 End Sub
@@ -328,9 +464,25 @@ Sub Odwolanie_ZmienFiltry_v2(oEvent As Object)
 
     Dim oStmt As Object: oStmt = oMainForm.ActiveConnection.createStatement()
     Dim sDataOd As String, sDataDo As String, sSQL As String
+    Dim oRes As Object
+    
+    &apos; Blokada przepływu, jeśli Komisja nie oceniła pracownika
+    Dim bKomisjaOcenila As Boolean: bKomisjaOcenila = False
+    sSQL = &quot;SELECT kom_zatwierdzil_user FROM pcz_oceny.oceny_okresowe WHERE id_pracownika = &quot; &amp; iPracID &amp; &quot; AND id_okresu = &quot; &amp; iOkrID
+    oRes = oStmt.executeQuery(sSQL)
+    If oRes.next() Then
+        If Not oRes.wasNull() And oRes.getString(1) &lt;&gt; &quot;&quot; Then bKomisjaOcenila = True
+    End If
+    
+    If Not bKomisjaOcenila Then
+        MsgBox &quot;Wybrany pracownik nie posiada jeszcze zatwierdzonej oceny od Komisji Wydziałowej za ten okres! Wymagane jest zakończenie etapu II.&quot;, 48, &quot;Brak oceny Komisji&quot;
+        PodgladAktywnosci_v2.g_TrwaOdswiezanie_v2 = False
+        Odwolanie_CzyscFiltryPrzyStarcie(oEvent)
+        Exit Sub
+    End If
     
     sSQL = &quot;SELECT data_od, data_do FROM pcz_oceny.okresy_oceny WHERE id_okresu = &quot; &amp; iOkrID
-    Dim oRes As Object: oRes = oStmt.executeQuery(sSQL)
+    oRes = oStmt.executeQuery(sSQL)
     If oRes.next() Then
         sDataOd = oRes.getString(1): sDataDo = oRes.getString(2)
     End If
@@ -386,16 +538,19 @@ Sub Odwolanie_ZmienFiltry_v2(oEvent As Object)
         oSubDecyzje.reload(): oSubDecyzje.first()
     End If
 
-    If oMainForm.hasByName(&quot;SubForm_Aktywnosci&quot;) Then
-        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_Aktywnosci&quot;)
-        sSQL = &quot;SELECT ap.*, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
+    If oMainForm.hasByName(&quot;SubForm_PodgladAktywnosci&quot;) Then
+        Dim oSubAkt As Object: oSubAkt = oMainForm.getByName(&quot;SubForm_PodgladAktywnosci&quot;)
+        sSQL = &quot;SELECT ap.*, gd.&quot;&quot;kod_grupy&quot;&quot;, ta.&quot;&quot;nazwa_aktywnosci&quot;&quot;, ka.&quot;&quot;lp&quot;&quot; &quot; &amp; _
                &quot;FROM &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;aktywnosci_pracownika&quot;&quot; ap &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;typy_aktywnosci&quot;&quot; ta ON ap.&quot;&quot;id_typu_aktywnosci&quot;&quot; = ta.&quot;&quot;id_typu&quot;&quot; &quot; &amp; _
                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;konfiguracja_aktywnosci&quot;&quot; ka ON ta.&quot;&quot;id_typu&quot;&quot; = ka.&quot;&quot;id_typu&quot;&quot; AND ka.&quot;&quot;id_okresu&quot;&quot; = &quot; &amp; iOkrID &amp; &quot; &quot; &amp; _
+                &quot;JOIN &quot;&quot;pcz_oceny&quot;&quot;.&quot;&quot;grupy_dzialan&quot;&quot; gd ON ta.&quot;&quot;id_grupy&quot;&quot; = gd.&quot;&quot;id_grupy&quot;&quot; &quot; &amp; _
                &quot;WHERE ap.&quot;&quot;id_pracownika&quot;&quot; = &quot; &amp; iPracID &amp; &quot; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &gt;= &apos;&quot; &amp; sDataOd &amp; &quot;&apos; AND ap.&quot;&quot;data_rozpoczecia&quot;&quot; &lt;= &apos;&quot; &amp; sDataDo &amp; &quot;&apos; &quot; &amp; _
                &quot;ORDER BY ka.&quot;&quot;kolejnosc&quot;&quot; ASC, ap.&quot;&quot;data_rozpoczecia&quot;&quot; DESC&quot;
-        oSubAkt.CommandType = 2: oSubAkt.EscapeProcessing = True
-        oSubAkt.Command = sSQL: oSubAkt.reload()
+        oSubAkt.CommandType = 2
+        oSubAkt.EscapeProcessing = True
+        oSubAkt.Command = sSQL
+        oSubAkt.reload()
     End If
 
     PodgladAktywnosci_v2.g_TrwaOdswiezanie_v2 = False
@@ -412,7 +567,7 @@ Sub ZatwierdzOceneOdwolawcza(oEvent As Object)
     Dim iOkrID As Integer: iOkrID = PodgladAktywnosci_v2.g_WybranyOkresID_v2
     
     If iPracID = 0 Or iOkrID = 0 Then Exit Sub
-    If MsgBox(&quot;Zatwierdzić ostateczną decyzję Rektora? Edycja zostanie zablokowana.&quot;, 36, &quot;Potwierdzenie&quot;) &lt;&gt; 6 Then Exit Sub
+    If MsgBox(&quot;Zatwierdzić ostateczną decyzję Komisji? Edycja zostanie zablokowana.&quot;, 36, &quot;Potwierdzenie&quot;) &lt;&gt; 6 Then Exit Sub
     
     Dim oStmt As Object: oStmt = oForm.ActiveConnection.createStatement()
     Dim sSQL As String
